@@ -1,0 +1,34 @@
+{
+    "Version": 1,
+    "Statement": [
+        {
+            "Effect": "Allow|Deny",
+            "Action": [
+                "action:::leave:request:approve"
+            ],
+            "Resource": "res:::leave:request",
+            "Condition": {
+                "StringLike": {
+                    "me::employee:company_uuid": "public-*"
+                }
+            }
+        },
+        {
+            "Effect": "Allow|Deny",
+            "Action": [
+                "action:::company:employee:list"
+            ],
+            "Resource": "res:::company:employee",
+            "Condition": {
+                "StringIn": {
+                    "res::company:employee:employee_uuid": [
+                        "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+                        "d89b9e25-b0f0-4056-86f0-c104007d1955",
+                        "d89b9e25-b0f0-4056-86f0-c104007d1955",
+                        "d89b9e25-b0f0-4056-86f0-c104007d1955"
+                    ]
+                }
+            }
+        }
+    ]
+}
