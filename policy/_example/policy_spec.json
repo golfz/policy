@@ -1,0 +1,56 @@
+{
+    "res:::employee": {
+        "actions": [
+            "act:::employee:read",
+            "act:::employee:list",
+            "act:::employee:create",
+            "act:::employee:update",
+            "act:::employee:delete"
+        ],
+        "properties": {
+            "string": [
+                "prop:::employee:employee_uuid",
+                "prop:::employee:position_uuid",
+                "prop:::employee:organization_uuid",
+                "prop:::employee:company_uuid"
+            ],
+            "number": [
+                "prop:::employee:organization_int_field_1",
+                "prop:::employee:organization_float_field_2"
+            ],
+            "boolean": [
+                "prop:::employee:organization_bool_field_1",
+                "prop:::employee:organization_bool_field_2"
+            ]
+        }
+    },
+    "res:::employee:biometric": {
+        "actions": [
+            "act:::employee:read",
+            "act:::employee:list",
+            "act:::employee:create",
+            "act:::employee:update",
+            "act:::employee:delete"
+        ],
+        "properties": {
+            "string": [
+                "prop:::employee:employee_uuid",
+                "prop:::employee:position_uuid",
+                "prop:::employee:organization_uuid",
+                "prop:::employee:company_uuid"
+            ],
+            "number": [
+                "prop:::employee:organization_int_field_1",
+                "prop:::employee:organization_float_field_2"
+            ],
+            "boolean": [
+                "prop:::employee:organization_bool_field_1",
+                "prop:::employee:organization_bool_field_2"
+            ]
+        }
+    }
+}
+
+
+
+
