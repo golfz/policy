@@ -32,7 +32,7 @@ type TimeRange struct {
 }
 
 func TestIsValid(t *testing.T) {
-	valid, err := authority.On(me, policy).Consider(Application{
+	valid, err := authority.New(me, policy).IsValidApplication(Application{
 		resource: "res:::leave",
 		action:   "act:::leave:approve",
 		properties: Property{

@@ -26,3 +26,6 @@ let menuSpec = {
 
 let isShowEmployeeMenu = authority.New(me, policy).IsValidMenu(menuSpec, "menu:::employee")
 
+// if we want to control sub menu
+let isShowEmployeeBiometricMenu = authority.New(me, policy).IsValidMenu(menuSpec, "menu:::employee:biometric")
+
