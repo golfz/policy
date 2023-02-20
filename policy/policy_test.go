@@ -3,6 +3,7 @@ package policy
 import (
 	"github.com/mastertech-hq/authority/pkg/authority"
 	"testing"
+	"time"
 )
 
 // Adams is logging in
@@ -13,20 +14,41 @@ import (
 // Adams is Bob's manager
 
 type Application struct {
-	action    string
-	resource  string
-	condition map[string]string
+	resource   string
+	action     string
+	properties Property
+}
+
+type Property struct {
+	String  map[string]string
+	Integer map[string]int
+	Float   map[string]float64
+	Bool    map[string]bool
+}
+
+type TimeRange struct {
+	From time.Time
+	To   time.Time
 }
 
 func TestIsValid(t *testing.T) {
-	me := ""
-	policy := ""
-	employee_uuid := "d89b9e25-b0f0-4056-86f0-c104007d1955"
-	authority.On(me, policy).Consider(Application{
-		action:   "approve",
-		resource: "leave_request",
-		condition: map[string]string{
-			"res::company:employee:employee_uuid": employee_uuid,
+	valid, err := authority.On(me, policy).Consider(Application{
+		resource: "res:::leave",
+		action:   "act:::leave:approve",
+		properties: Property{
+			String: map[string]string{
+				"prop:::employee:employee_uuid":     employee_uuid,
+				"prop:::employee:organization_uuid": employee_organization_uuid,
+				"prop:::employee:company_uuid":      employee_company_uuid,
+			},
 		},
 	})
+	if err != nil {
+		t.Error(err)
+	}
+	if !valid {
+		t.Error("expected valid to be true")
+	}
+
+	// do something you want to do
 }
