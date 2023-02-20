@@ -14,8 +14,12 @@
                 "prop:::employee:organization_uuid",
                 "prop:::employee:company_uuid"
             ],
-            "number": [
+            "integer": [
                 "prop:::employee:organization_int_field_1",
+                "prop:::employee:organization_int_field_2"
+            ],
+            "float": [
+                "prop:::employee:organization_float_field_1",
                 "prop:::employee:organization_float_field_2"
             ],
             "boolean": [
@@ -34,8 +38,12 @@
                 "prop:::employee:organization_uuid",
                 "prop:::employee:company_uuid"
             ],
-            "number": [
+            "integer": [
                 "prop:::employee:organization_int_field_1",
+                "prop:::employee:organization_int_field_2"
+            ],
+            "float": [
+                "prop:::employee:organization_float_field_1",
                 "prop:::employee:organization_float_field_2"
             ],
             "boolean": [

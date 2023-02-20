@@ -1,0 +1,30 @@
+{
+    "policy_url": "api.mastertime.io/policy/501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+    "employees": {
+        "employee_uuid": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+        "employee_code": "0001",
+        "first_name_th": "ชื่อ",
+        "last_name_th": "นามสกุล",
+        "first_name_en": "John",
+        "last_name_en": "Doe",
+        "position": {
+            "position_uuid": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+            "title_th": "นักวิชาการคอมพิวเตอร์",
+            "title_en": "Computer Scientist"
+        },
+        "organization": {
+            "organization_uuid": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+            "title_th": "ฝ่ายพัฒนาซอฟต์แวร์",
+            "title_en": "Software Development Department"
+        },
+        "company": {
+            "company_uuid": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+            "title_th": "บริษัท ซีเอ็มเอส จำกัด",
+            "title_en": "CMS Co., Ltd."
+        }
+    },
+    "hardware": null,
+    "3rd_party": null,
+    "service": null,
+    "developer": null
+}
