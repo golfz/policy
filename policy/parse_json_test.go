@@ -1,15 +1,13 @@
 package policy
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestParseJSON(t *testing.T) {
-	strPolicy := `{
+	strPolicy := `
+	{
 		"Version": 1,
 		"PolicyID": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
 		"Statement": [	
@@ -21,10 +19,10 @@ func TestParseJSON(t *testing.T) {
 					"AtLeastOne": {
 						"StringIn": {
 							"prop:::employee:employee_uuid": [
-								"501228f3-f7f3-4ef1-8bc9-9fb73347f518",  
-                            	"d23b9e25-b0f0-4056-86f0-c104007d1955",  
-                            	"e45b9e25-b0f0-4056-86f0-c104007d1904",  
-                            	"c78b9e25-b0f0-4056-86f0-c104007d1967" 
+								"11111111",  
+                            	"22222222",  
+                            	"33333333",  
+                            	"44444444" 
 							]	
 						}
 					},  
@@ -43,11 +41,12 @@ func TestParseJSON(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 1, p.Version)
-	//assert.Equal(t, "Bob", p.Statement[0].Condition.AtLeastOne.StringIn["prop:::employee:employee_uuid"][0])
+	assert.Equal(t, 1, len(p.Statement))
 
-	spew.Dump(p)
+	assert.NotNil(t, p.Statement[0].Condition.AtLeastOne.StringIn)
+	assert.Nil(t, p.Statement[0].Condition.AtLeastOne.StringEqual)
+	assert.Contains(t, p.Statement[0].Condition.AtLeastOne.StringIn["prop:::employee:employee_uuid"], "11111111")
 
-	strJson, err := json.MarshalIndent(p, "", "    ")
-	assert.NoError(t, err)
-	fmt.Println(string(strJson))
+	assert.NotNil(t, p.Statement[0].Condition.MustHaveAll.DateRange)
+	assert.Empty(t, p.Statement[0].Condition.MustHaveAll.DateRange["sys:::now:date"].From)
 }
