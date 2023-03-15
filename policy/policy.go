@@ -5,11 +5,22 @@ import (
 )
 
 func (p *Policy) IsAccessAllowed(r resources.Resource) (bool, error) {
-	_, err := p.getStatementsForResource(r)
+	const (
+		ALLOWED = true
+		DENIED  = false
+	)
+
+	statements, err := p.getStatementsForResource(r)
 	if err != nil {
-		return false, err
+		return DENIED, err
 	}
-	return true, nil
+
+	// RULE 1: If there are no statements, then the action is denied.
+	if len(statements) == 0 {
+		return DENIED, nil
+	}
+
+	return ALLOWED, nil
 }
 
 func (p *Policy) getStatementsForResource(res resources.Resource) ([]Statement, error) {
