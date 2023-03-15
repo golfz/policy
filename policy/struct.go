@@ -53,6 +53,6 @@ type TimeCondition struct {
 }
 
 type TimeDuration struct {
-	From string `json:"From"`
-	To   string `json:"To"`
+	From string
+	To   string
 }
