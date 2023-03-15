@@ -10,10 +10,7 @@ import (
 func TestIsAccessAllowed_AAA(t *testing.T) {
 	strPolicy := `{
 		"Version": 1,
-		"User": {
-			"UserID": "Bob",
-			"UserType": "employee"
-		},
+		"PolicyID": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
 		"Statement": [	
 			{
 				"Effect": "Allow",

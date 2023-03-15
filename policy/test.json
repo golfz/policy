@@ -1,0 +1,48 @@
+{
+    "Version": 1,
+    "PolicyID": "",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Resource": "res:::leave",
+            "Action": [
+                "act:::leave:approve"
+            ],
+            "Condition": {
+                "AtLeastOne": {
+                    "StringIn": {
+                        "prop:::employee:employee_uuid": [
+                            "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+                            "d23b9e25-b0f0-4056-86f0-c104007d1955",
+                            "e45b9e25-b0f0-4056-86f0-c104007d1904",
+                            "c78b9e25-b0f0-4056-86f0-c104007d1967"
+                        ]
+                    },
+                    "StringEqual": null,
+                    "IntegerIn": null,
+                    "IntegerEqual": null,
+                    "FloatIn": null,
+                    "FloatEqual": null,
+                    "BooleanIn": null,
+                    "BooleanEqual": null,
+                    "TimeRange": null,
+                    "DateRange": null,
+                    "DateTimeRange": null
+                },
+                "MustHaveAll": {
+                    "StringIn": null,
+                    "StringEqual": null,
+                    "IntegerIn": null,
+                    "IntegerEqual": null,
+                    "FloatIn": null,
+                    "FloatEqual": null,
+                    "BooleanIn": null,
+                    "BooleanEqual": null,
+                    "TimeRange": null,
+                    "DateRange": null,
+                    "DateTimeRange": null
+                }
+            }
+        }
+    ]
+}

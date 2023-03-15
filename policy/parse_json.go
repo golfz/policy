@@ -1,5 +1,9 @@
 package policy
 
+import "encoding/json"
+
 func ParseJSON(data []byte) (Policy, error) {
-	return Policy{}, nil
+	var p Policy
+	err := json.Unmarshal(data, &p)
+	return p, err
 }

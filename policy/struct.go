@@ -27,29 +27,29 @@ type AvailableCondition struct {
 }
 
 type StringCondition struct {
-	StringIn    map[string][]string
-	StringEqual map[string]string
+	StringIn    map[string][]string `json:"StringIn,omitempty"`
+	StringEqual map[string]string   `json:"StringEqual,omitempty"`
 }
 
 type IntegerCondition struct {
-	IntegerIn    map[string][]int
-	IntegerEqual map[string]int
+	IntegerIn    map[string][]int `json:"IntegerIn,omitempty"`
+	IntegerEqual map[string]int   `json:"IntegerEqual,omitempty"`
 }
 
 type FloatCondition struct {
-	FloatIn    map[string][]float64
-	FloatEqual map[string]float64
+	FloatIn    map[string][]float64 `json:"FloatIn,omitempty"`
+	FloatEqual map[string]float64   `json:"FloatEqual,omitempty"`
 }
 
 type BoolCondition struct {
-	BooleanIn    map[string][]bool
-	BooleanEqual map[string]bool
+	BooleanIn    map[string][]bool `json:"BooleanIn,omitempty"`
+	BooleanEqual map[string]bool   `json:"BooleanEqual,omitempty"`
 }
 
 type TimeCondition struct {
-	TimeRange     map[string]TimeDuration
-	DateRange     map[string]TimeDuration
-	DateTimeRange map[string]TimeDuration
+	TimeRange     map[string]TimeDuration `json:"TimeRange,omitempty"`
+	DateRange     map[string]TimeDuration `json:"DateRange,omitempty"`
+	DateTimeRange map[string]TimeDuration `json:"DateTimeRange,omitempty"`
 }
 
 type TimeDuration struct {
