@@ -1,8 +1,14 @@
 package policy
 
-import "github.com/mastertech-hq/authority/resources"
+import (
+	"github.com/mastertech-hq/authority/resources"
+)
 
 func (p *Policy) IsAccessAllowed(r resources.Resource) (bool, error) {
+	_, err := p.getStatementsForResource(r)
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
