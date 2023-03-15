@@ -5,3 +5,8 @@ import "github.com/mastertech-hq/authority/resources"
 func (p *Policy) IsAccessAllowed(r resources.Resource) (bool, error) {
 	return true, nil
 }
+
+func (p *Policy) GetStatementsForResource(res resources.Resource) ([]Statement, error) {
+
+	return []Statement{}, nil
+}
