@@ -20,7 +20,17 @@ func (p *Policy) IsAccessAllowed(res resources.Resource) (bool, error) {
 		return DENIED, nil
 	}
 
-	return considerStatements(statements)
+	var countAllow, countDeny uint
+	// RULE 2: If found at least one statement with effect "Deny", then the action is "DENIED".
+	if countDeny > 0 {
+		return DENIED, nil
+	}
+	// RULE 3: If not found any statement matched with condition, then the action is "DENIED".
+	if countDeny == 0 && countAllow == 0 {
+		return DENIED, nil
+	}
+
+	return ALLOWED, nil
 }
 
 func (p *Policy) getStatementsForResource(res resources.Resource) ([]Statement, error) {
@@ -44,18 +54,4 @@ func (p *Policy) getStatementsForResource(res resources.Resource) ([]Statement, 
 	}
 
 	return statements, nil
-}
-
-func considerStatements(statements []Statement) (bool, error) {
-	var countAllow, countDeny uint
-	// RULE 2: If found at least one statement with effect "Deny", then the action is "DENIED".
-	if countDeny > 0 {
-		return DENIED, nil
-	}
-	// RULE 3: If not found any statement matched with condition, then the action is "DENIED".
-	if countDeny == 0 && countAllow == 0 {
-		return DENIED, nil
-	}
-
-	return ALLOWED, nil
 }
