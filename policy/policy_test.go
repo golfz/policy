@@ -1,7 +1,6 @@
 package policy
 
 import (
-	"github.com/mastertech-hq/authority/resources"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -28,7 +27,7 @@ func TestPolicy_getStatementsForResource_found_1_from_1(t *testing.T) {
 	p, err := ParseJSON([]byte(strPolicy))
 	assert.NoError(t, err)
 
-	res := resources.Resource{
+	res := Resource{
 		Resource: "res:::leave",
 		Action:   "act:::leave:approve",
 	}
@@ -70,7 +69,7 @@ func TestPolicy_getStatementsForResource_found_2_from_3(t *testing.T) {
 	p, err := ParseJSON([]byte(strPolicy))
 	assert.NoError(t, err)
 
-	res := resources.Resource{
+	res := Resource{
 		Resource: "res:::leave",
 		Action:   "act:::leave:approve",
 	}
@@ -116,7 +115,7 @@ func TestPolicy_getStatementsForResource_found_only_1_matched_action(t *testing.
 	p, err := ParseJSON([]byte(jsonPolicy))
 	assert.NoError(t, err)
 
-	res := resources.Resource{
+	res := Resource{
 		Resource: "res:::leave",
 		Action:   "act:::leave:approve",
 	}
@@ -162,7 +161,7 @@ func TestPolicy_getStatementsForResource_found_0_no_matched_action(t *testing.T)
 	p, err := ParseJSON([]byte(jsonPolicy))
 	assert.NoError(t, err)
 
-	res := resources.Resource{
+	res := Resource{
 		Resource: "res:::leave",
 		Action:   "act:::leave:approve",
 	}
@@ -204,7 +203,7 @@ func TestPolicy_getStatementsForResource_found_0_no_matched_resource(t *testing.
 	p, err := ParseJSON([]byte(jsonPolicy))
 	assert.NoError(t, err)
 
-	res := resources.Resource{
+	res := Resource{
 		Resource: "res:::unknown",
 		Action:   "act:::unknown:read",
 	}
@@ -224,7 +223,7 @@ func TestPolicy_getStatementsForResource_found_0_no_statement(t *testing.T) {
 	p, err := ParseJSON([]byte(jsonPolicy))
 	assert.NoError(t, err)
 
-	res := resources.Resource{
+	res := Resource{
 		Resource: "res:::something",
 		Action:   "act:::something:read",
 	}

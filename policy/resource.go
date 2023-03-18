@@ -1,4 +1,4 @@
-package resources
+package policy
 
 type Resource struct {
 	Resource   string
