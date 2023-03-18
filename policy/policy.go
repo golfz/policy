@@ -40,18 +40,28 @@ func (p *Policy) getStatementsForResource(res resources.Resource) ([]Statement, 
 		if stmt.Resource != res.Resource {
 			continue
 		}
-		isContains := func(list []string, s string) bool {
-			for _, v := range list {
-				if v == s {
-					return true
-				}
-			}
-			return false
-		}
-		if isContains(stmt.Action, res.Action) {
+		if isContainsInList(stmt.Action, res.Action) {
 			statements = append(statements, stmt)
 		}
 	}
 
 	return statements, nil
+}
+
+func considerStatement(stmt Statement, res resources.Resource) (bool, error) {
+
+	return false, nil
+}
+
+func isContainsInList[T comparable](list []T, s T) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func isEquals[T comparable](a, b T) bool {
+	return a == b
 }

@@ -10,12 +10,12 @@ type Statement struct {
 	Effect    string
 	Resource  string
 	Action    []string
-	Condition Condition
+	Condition *Condition
 }
 
 type Condition struct {
-	AtLeastOne  AvailableCondition
-	MustHaveAll AvailableCondition
+	AtLeastOne  *AvailableCondition
+	MustHaveAll *AvailableCondition
 }
 
 type AvailableCondition struct {
@@ -47,12 +47,12 @@ type BoolCondition struct {
 }
 
 type TimeCondition struct {
-	TimeRange     map[string]TimeDuration `json:"TimeRange,omitempty"`
-	DateRange     map[string]TimeDuration `json:"DateRange,omitempty"`
-	DateTimeRange map[string]TimeDuration `json:"DateTimeRange,omitempty"`
+	TimeRange     map[string]TimeRange `json:"TimeRange,omitempty"`
+	DateRange     map[string]TimeRange `json:"DateRange,omitempty"`
+	DateTimeRange map[string]TimeRange `json:"DateTimeRange,omitempty"`
 }
 
-type TimeDuration struct {
+type TimeRange struct {
 	From string
 	To   string
 }
