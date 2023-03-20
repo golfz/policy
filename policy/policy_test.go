@@ -32,8 +32,7 @@ func TestPolicy_getStatementsForResource_found_1_from_1(t *testing.T) {
 		Action:   "act:::leave:approve",
 	}
 
-	statements, err := p.getStatementsForResource(res)
-	assert.NoError(t, err)
+	statements := p.getStatementsForResource(res)
 	assert.Equal(t, 1, len(statements))
 }
 
@@ -74,8 +73,7 @@ func TestPolicy_getStatementsForResource_found_2_from_3(t *testing.T) {
 		Action:   "act:::leave:approve",
 	}
 
-	statements, err := p.getStatementsForResource(res)
-	assert.NoError(t, err)
+	statements := p.getStatementsForResource(res)
 	assert.Equal(t, 2, len(statements))
 }
 
@@ -120,8 +118,7 @@ func TestPolicy_getStatementsForResource_found_only_1_matched_action(t *testing.
 		Action:   "act:::leave:approve",
 	}
 
-	statements, err := p.getStatementsForResource(res)
-	assert.NoError(t, err)
+	statements := p.getStatementsForResource(res)
 	assert.Equal(t, 1, len(statements))
 }
 
@@ -166,8 +163,7 @@ func TestPolicy_getStatementsForResource_found_0_no_matched_action(t *testing.T)
 		Action:   "act:::leave:approve",
 	}
 
-	statements, err := p.getStatementsForResource(res)
-	assert.NoError(t, err)
+	statements := p.getStatementsForResource(res)
 	assert.Equal(t, 0, len(statements))
 }
 
@@ -208,8 +204,7 @@ func TestPolicy_getStatementsForResource_found_0_no_matched_resource(t *testing.
 		Action:   "act:::unknown:read",
 	}
 
-	statements, err := p.getStatementsForResource(res)
-	assert.NoError(t, err)
+	statements := p.getStatementsForResource(res)
 	assert.Equal(t, 0, len(statements))
 }
 
@@ -228,7 +223,6 @@ func TestPolicy_getStatementsForResource_found_0_no_statement(t *testing.T) {
 		Action:   "act:::something:read",
 	}
 
-	statements, err := p.getStatementsForResource(res)
-	assert.NoError(t, err)
+	statements := p.getStatementsForResource(res)
 	assert.Equal(t, 0, len(statements))
 }

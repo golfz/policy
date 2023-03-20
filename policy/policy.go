@@ -23,9 +23,10 @@ func (p *Policy) IsAccessAllowed(res Resource) (bool, error) {
 			return DENIED, err
 		}
 
-		if effect == ALLOWED {
+		switch effect {
+		case ALLOWED:
 			countAllow++
-		} else if effect == DENIED {
+		case DENIED:
 			countDeny++
 		}
 	}
