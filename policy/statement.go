@@ -9,10 +9,15 @@ const (
 	statementEffectDenyString  = "Deny"
 )
 
-func considerStatement(stmt Statement, res Resource) (bool, error) {
-	effect, err := convertEffectToBoolean(stmt.Effect)
+const (
+	conditionMatched    = true
+	conditionNotMatched = false
+)
+
+func considerStatement(stmt Statement, res Resource) (ResultEffect, error) {
+	effect, err := convertStringToResultEffect(stmt.Effect)
 	if err != nil {
-		return DENIED, err
+		return ignored, err
 	}
 
 	// RULE :
@@ -22,86 +27,75 @@ func considerStatement(stmt Statement, res Resource) (bool, error) {
 		return effect, nil
 	}
 
-	isMatched, err := considerStatementCondition(*stmt.Condition, res)
+	isMatched, err := considerStatementConditions(*stmt.Condition, res)
 	if err != nil {
-		return DENIED, err
+		return ignored, err
 	}
 
 	if isMatched {
 		return effect, nil
 	}
 
-	return DENIED, nil
+	return ignored, nil
 }
 
-func convertEffectToBoolean(effect string) (bool, error) {
-	switch effect {
-	case statementEffectAllowString:
-		return ALLOWED, nil
-	case statementEffectDenyString:
-		return DENIED, nil
-	default:
-		return DENIED, fmt.Errorf("invalid effect: %s", effect)
-	}
-}
-
-func considerStatementCondition(condition Condition, res Resource) (bool, error) {
+func considerStatementConditions(condition Condition, res Resource) (bool, error) {
 	isAtLeastOneConditionMatched, err := considerAtLeastOneCondition(condition.AtLeastOne, res)
 	if err != nil {
-		return DENIED, err
+		return conditionNotMatched, err
 	}
 
 	isMustHaveAllConditionMatched, err := considerMustHaveAllCondition(condition.MustHaveAll, res)
 	if err != nil {
-		return DENIED, err
+		return conditionNotMatched, err
 	}
 
 	isMatched := isAtLeastOneConditionMatched && isMustHaveAllConditionMatched
 	return isMatched, nil
 }
 
-func considerAtLeastOneCondition(cons *AvailableCondition, res Resource) (bool, error) {
-	if cons == nil {
-		return ALLOWED, nil
+func considerAtLeastOneCondition(conditions *AvailableCondition, res Resource) (bool, error) {
+	if conditions == nil {
+		return conditionMatched, nil
 	}
 
-	matched, total, err := considerAvailableConditions(*cons, res)
+	matched, total, err := considerAvailableConditions(*conditions, res)
 	if err != nil {
-		return DENIED, err
+		return conditionNotMatched, err
 	}
 
 	if total == 0 {
-		return ALLOWED, nil
+		return conditionMatched, nil
 	}
 
 	if matched > 0 {
-		return ALLOWED, nil
+		return conditionMatched, nil
 	}
 
 	// total > 0 && matched == 0
-	return DENIED, nil
+	return conditionNotMatched, nil
 }
 
 func considerMustHaveAllCondition(cons *AvailableCondition, res Resource) (bool, error) {
 	if cons == nil {
-		return ALLOWED, nil
+		return conditionMatched, nil
 	}
 
 	matched, total, err := considerAvailableConditions(*cons, res)
 	if err != nil {
-		return DENIED, err
+		return conditionNotMatched, err
 	}
 
 	if total == 0 {
-		return ALLOWED, nil
+		return conditionMatched, nil
 	}
 
 	if matched == total {
-		return ALLOWED, nil
+		return conditionMatched, nil
 	}
 
 	// total > 0 && matched < total
-	return DENIED, nil
+	return conditionNotMatched, nil
 }
 
 func considerAvailableConditions(cons AvailableCondition, res Resource) (int, int, error) {
@@ -166,5 +160,16 @@ func considerEqual[T comparable](equalCons map[string]T, resProps map[string]T, 
 		if isEquals(conValue, resPropValue) {
 			*matched++
 		}
+	}
+}
+
+func convertStringToResultEffect(effect string) (ResultEffect, error) {
+	switch effect {
+	case statementEffectAllowString:
+		return ALLOWED, nil
+	case statementEffectDenyString:
+		return DENIED, nil
+	default:
+		return DENIED, fmt.Errorf("invalid effect: %s", effect)
 	}
 }

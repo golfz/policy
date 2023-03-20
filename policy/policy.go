@@ -1,15 +1,18 @@
 package policy
 
+type ResultEffect int
+
 const (
-	ALLOWED = true
-	DENIED  = false
+	ignored ResultEffect = 0
+	ALLOWED ResultEffect = 1
+	DENIED  ResultEffect = 2
 )
 
-func (p *Policy) IsAccessAllowed(res Resource) (bool, error) {
+func (p *Policy) IsAccessAllowed(res Resource) (ResultEffect, error) {
 	statements := p.getStatementsForResource(res)
 
 	// RULE 1:
-	// If there are no statements, then the action is denied.
+	// If there are no matched-statements, then the action is denied.
 	if len(statements) == 0 {
 		return DENIED, nil
 	}
@@ -38,16 +41,17 @@ func (p *Policy) IsAccessAllowed(res Resource) (bool, error) {
 	}
 
 	// RULE 3:
-	// If not found any statement matched with condition, then the action is "DENIED".
-	if countDeny == 0 && countAllow == 0 {
-		return DENIED, nil
+	// If not found any statement with effect "Deny",
+	// and found at least one statement with effect "Allow",
+	// then the action is "ALLOWED".
+	if countAllow > 0 {
+		return ALLOWED, nil
 	}
 
 	// RULE 4:
-	// If not found any statement with effect "Deny"
-	// and found at least one statement with effect "Allow",
-	// then the action is "ALLOWED".
-	return ALLOWED, nil
+	// If not found any statement with effect "Deny" and "Allow",
+	// then the action is "DENIED".
+	return DENIED, nil
 }
 
 func (p *Policy) getStatementsForResource(res Resource) []Statement {

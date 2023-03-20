@@ -6,27 +6,27 @@ import (
 )
 
 func Test_convertEffectToBoolean(t *testing.T) {
-	effect, err := convertEffectToBoolean("Allow")
+	effect, err := convertStringToResultEffect("Allow")
 	assert.NoError(t, err)
 	assert.Equal(t, ALLOWED, effect)
 
-	effect, err = convertEffectToBoolean("Deny")
+	effect, err = convertStringToResultEffect("Deny")
 	assert.NoError(t, err)
 	assert.Equal(t, DENIED, effect)
 
-	effect, err = convertEffectToBoolean("Invalid")
+	effect, err = convertStringToResultEffect("Invalid")
 	assert.Error(t, err)
 	assert.Equal(t, DENIED, effect)
 
-	_, err = convertEffectToBoolean("")
+	_, err = convertStringToResultEffect("")
 	assert.Error(t, err)
 
 	// Test case-insensitive
-	_, err = convertEffectToBoolean("allow")
+	_, err = convertStringToResultEffect("allow")
 	assert.Error(t, err)
 
 	// Test case-insensitive
-	_, err = convertEffectToBoolean("deny")
+	_, err = convertStringToResultEffect("deny")
 	assert.Error(t, err)
 }
 
