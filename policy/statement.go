@@ -14,7 +14,7 @@ const (
 )
 
 func considerStatement(stmt Statement, res Resource) (bool, error) {
-	effect, err := convertEffectToboolean(stmt.Effect)
+	effect, err := convertEffectToBoolean(stmt.Effect)
 	if err != nil {
 		return DENIED, err
 	}
@@ -26,7 +26,7 @@ func considerStatement(stmt Statement, res Resource) (bool, error) {
 		return effect, nil
 	}
 
-	isMatched, err := considerConditionInStatement(*stmt.Condition, res)
+	isMatched, err := considerStatementCondition(*stmt.Condition, res)
 	if err != nil {
 		return DENIED, err
 	}
@@ -34,7 +34,7 @@ func considerStatement(stmt Statement, res Resource) (bool, error) {
 	return isMatched, nil
 }
 
-func convertEffectToboolean(effect string) (bool, error) {
+func convertEffectToBoolean(effect string) (bool, error) {
 	switch effect {
 	case statementEffectAllowString:
 		return ALLOWED, nil
@@ -45,7 +45,7 @@ func convertEffectToboolean(effect string) (bool, error) {
 	}
 }
 
-func considerConditionInStatement(condition Condition, res Resource) (bool, error) {
+func considerStatementCondition(condition Condition, res Resource) (bool, error) {
 	isAtLeastOneConditionMatched, err := considerAtLeastOneCondition(condition.AtLeastOne, res)
 	if err != nil {
 		return DENIED, err
@@ -61,10 +61,46 @@ func considerConditionInStatement(condition Condition, res Resource) (bool, erro
 }
 
 func considerAtLeastOneCondition(cons *AvailableCondition, res Resource) (bool, error) {
+	if cons == nil {
+		return ALLOWED, nil
+	}
+
+	matched, total, err := considerAvailableConditions(*cons, res)
+	if err != nil {
+		return DENIED, err
+	}
+
+	if total == 0 {
+		return ALLOWED, nil
+	}
+
+	if matched > 0 {
+		return ALLOWED, nil
+	}
+
+	// total > 0 && matched == 0
 	return DENIED, nil
 }
 
 func considerMustHaveAllCondition(cons *AvailableCondition, res Resource) (bool, error) {
+	if cons == nil {
+		return ALLOWED, nil
+	}
+
+	matched, total, err := considerAvailableConditions(*cons, res)
+	if err != nil {
+		return DENIED, err
+	}
+
+	if total == 0 {
+		return ALLOWED, nil
+	}
+
+	if matched == total {
+		return ALLOWED, nil
+	}
+
+	// total > 0 && matched < total
 	return DENIED, nil
 }
 
@@ -88,7 +124,7 @@ func considerAvailableConditions(cons AvailableCondition, res Resource) (int, in
 	considerIn(cons.BooleanIn, res.Properties.Boolean, &matched, &total, &err)
 	considerEqual(cons.BooleanEqual, res.Properties.Boolean, &matched, &total, &err)
 
-	return matched, total, nil
+	return matched, total, err
 }
 
 func considerIn[T comparable](inCons map[string][]T, resProps map[string]T, matched *int, total *int, err *error) {
