@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestPolicy_IsAccessAllowed(t *testing.T) {
+func TestPolicy_IsAccessAllowed_(t *testing.T) {
 
 }
 
