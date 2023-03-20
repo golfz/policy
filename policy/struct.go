@@ -1,5 +1,9 @@
 package policy
 
+// ----------------------------------------------
+// Policy
+// ----------------------------------------------
+
 type Policy struct {
 	Version   int
 	PolicyID  string
@@ -55,4 +59,21 @@ type TimeCondition struct {
 type TimeRange struct {
 	From string
 	To   string
+}
+
+// ----------------------------------------------
+// Resource
+// ----------------------------------------------
+
+type Resource struct {
+	Resource   string
+	Action     string
+	Properties Property
+}
+
+type Property struct {
+	String  map[string]string
+	Integer map[string]int
+	Float   map[string]float64
+	Boolean map[string]bool
 }
