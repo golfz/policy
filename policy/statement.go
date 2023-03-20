@@ -76,6 +76,18 @@ func considerAvailableConditions(cons AvailableCondition, res Resource) (int, in
 	considerIn(cons.StringIn, res.Properties.String, &matched, &total, &err)
 	considerEqual(cons.StringEqual, res.Properties.String, &matched, &total, &err)
 
+	// int
+	considerIn(cons.IntegerIn, res.Properties.Integer, &matched, &total, &err)
+	considerEqual(cons.IntegerEqual, res.Properties.Integer, &matched, &total, &err)
+
+	// float
+	considerIn(cons.FloatIn, res.Properties.Float, &matched, &total, &err)
+	considerEqual(cons.FloatEqual, res.Properties.Float, &matched, &total, &err)
+
+	// bool
+	considerIn(cons.BooleanIn, res.Properties.Boolean, &matched, &total, &err)
+	considerEqual(cons.BooleanEqual, res.Properties.Boolean, &matched, &total, &err)
+
 	return matched, total, nil
 }
 
