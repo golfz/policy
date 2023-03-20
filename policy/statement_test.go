@@ -5,6 +5,31 @@ import (
 	"testing"
 )
 
+func Test_convertEffectToBoolean(t *testing.T) {
+	effect, err := convertEffectToBoolean("Allow")
+	assert.NoError(t, err)
+	assert.Equal(t, ALLOWED, effect)
+
+	effect, err = convertEffectToBoolean("Deny")
+	assert.NoError(t, err)
+	assert.Equal(t, DENIED, effect)
+
+	effect, err = convertEffectToBoolean("Invalid")
+	assert.Error(t, err)
+	assert.Equal(t, DENIED, effect)
+
+	_, err = convertEffectToBoolean("")
+	assert.Error(t, err)
+
+	// Test case-insensitive
+	_, err = convertEffectToBoolean("allow")
+	assert.Error(t, err)
+
+	// Test case-insensitive
+	_, err = convertEffectToBoolean("deny")
+	assert.Error(t, err)
+}
+
 func Test_considerAvailableConditions(t *testing.T) {
 	ac := AvailableCondition{
 		StringCondition: StringCondition{

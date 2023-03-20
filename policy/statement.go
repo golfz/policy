@@ -9,10 +9,6 @@ const (
 	statementEffectDenyString  = "Deny"
 )
 
-const (
-	matchedCondition = true
-)
-
 func considerStatement(stmt Statement, res Resource) (bool, error) {
 	effect, err := convertEffectToBoolean(stmt.Effect)
 	if err != nil {
@@ -31,7 +27,11 @@ func considerStatement(stmt Statement, res Resource) (bool, error) {
 		return DENIED, err
 	}
 
-	return isMatched, nil
+	if isMatched {
+		return effect, nil
+	}
+
+	return DENIED, nil
 }
 
 func convertEffectToBoolean(effect string) (bool, error) {
