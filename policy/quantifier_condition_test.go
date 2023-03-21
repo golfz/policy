@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+/* /////////////////////////////////////////////////////////////////
+//                  considerAtLeastOneCondition                   //
+///////////////////////////////////////////////////////////////// */
+
 func Test_considerAtLeastOneCondition_NilConditions_Expect_AlwaysMatched(t *testing.T) {
 	// nil conditions, no resource properties, always matched
 	res := Resource{}
@@ -205,4 +209,30 @@ func Test_considerAtLeastOneCondition_No_Matched_Conditions_Expect_NotMatched(t 
 	isMatched, err := considerAtLeastOneCondition(conditions, res)
 	assert.NoError(t, err)
 	assert.False(t, isMatched)
+}
+
+/* /////////////////////////////////////////////////////////////////
+//                  considerMustHaveAllCondition                  //
+///////////////////////////////////////////////////////////////// */
+
+func Test_considerMustHaveAllCondition_NilConditions_Expect_AlwaysMatched(t *testing.T) {
+	// nil conditions, no resource properties, always matched
+	res := Resource{}
+	isMatched, err := considerMustHaveAllCondition(nil, res)
+	assert.NoError(t, err)
+	assert.True(t, isMatched)
+
+	// nil conditions, with resource properties, always matched
+	res = Resource{
+		Resource: "res:::something",
+		Action:   "act:::something:read",
+		Properties: Property{
+			String: map[string]string{
+				"prop::something:prop1": "value1",
+			},
+		},
+	}
+	isMatched, err = considerMustHaveAllCondition(nil, res)
+	assert.NoError(t, err)
+	assert.True(t, isMatched)
 }
