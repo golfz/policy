@@ -23,6 +23,7 @@ func considerAtLeastOneCondition(propertyConditions *PropertyCondition, res Reso
 
 	// total > 0
 	// matched == 0
+	// return "not matched"
 	return conditionNotMatched, nil
 }
 
@@ -49,5 +50,6 @@ func considerMustHaveAllCondition(propertyConditions *PropertyCondition, res Res
 
 	// total > 0
 	// matched < total
+	// return "not matched"
 	return conditionNotMatched, nil
 }
