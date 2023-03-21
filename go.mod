@@ -1,11 +1,8 @@
-module github.com/mastertech-hq/authority
+module github.com/golfz/policy
 
 go 1.19
 
-require (
-	github.com/golang-jwt/jwt/v4 v4.4.3
-	github.com/stretchr/testify v1.8.2
-)
+require github.com/stretchr/testify v1.8.2
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
