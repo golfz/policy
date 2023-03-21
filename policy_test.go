@@ -81,6 +81,195 @@ func Test_IsAccessAllowed_Invalid_Effect_Statement_Expect_Error(t *testing.T) {
 	fmt.Println(err)
 }
 
+func Test_IsAccessAllowed_Only_1_Deny_Although_have_multi_Allow_Expect_Denied(t *testing.T) {
+	p := Policy{
+		Version:  1,
+		PolicyID: "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+		Statement: []Statement{
+			{
+				Effect:   "Deny",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: nil,
+			},
+			{
+				Effect:   "Allow",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: nil,
+			},
+			{
+				Effect:   "Allow",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: nil,
+			},
+		},
+	}
+
+	res := Resource{
+		Resource:   "res:::something",
+		Action:     "act:::something:action1",
+		Properties: Property{},
+	}
+
+	result, err := p.IsAccessAllowed(res)
+	assert.NoError(t, err)
+	assert.Equal(t, DENIED, result)
+}
+
+func Test_IsAccessAllowed_No_Deny_with_1_Allow_Expect_Allowed(t *testing.T) {
+	p := Policy{
+		Version:  1,
+		PolicyID: "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+		Statement: []Statement{
+			{
+				Effect:   "Deny",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: &Condition{
+					MustHaveAll: &PropertyCondition{
+						StringCondition: StringCondition{
+							StringEqual: map[string]string{
+								"prop:::something:prop1": "value1",
+							},
+						},
+					},
+				},
+			},
+			{
+				Effect:   "Deny",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: &Condition{
+					MustHaveAll: &PropertyCondition{
+						StringCondition: StringCondition{
+							StringEqual: map[string]string{
+								"prop:::something:prop2": "value2",
+							},
+						},
+					},
+				},
+			},
+			{
+				Effect:   "Allow",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: &Condition{
+					MustHaveAll: &PropertyCondition{
+						StringCondition: StringCondition{
+							StringEqual: map[string]string{
+								"prop:::something:prop3": "value3",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	res := Resource{
+		Resource: "res:::something",
+		Action:   "act:::something:action1",
+		Properties: Property{
+			String: map[string]string{
+				"prop:::something:prop1": "no",
+				"prop:::something:prop2": "no",
+				"prop:::something:prop3": "value3",
+			},
+		},
+	}
+
+	result, err := p.IsAccessAllowed(res)
+	assert.NoError(t, err)
+	assert.Equal(t, ALLOWED, result)
+}
+
+func Test_IsAccessAllowed_No_Matched_Statement_Expect_Denied(t *testing.T) {
+	p := Policy{
+		Version:  1,
+		PolicyID: "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+		Statement: []Statement{
+			{
+				Effect:   "Deny",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: &Condition{
+					MustHaveAll: &PropertyCondition{
+						StringCondition: StringCondition{
+							StringEqual: map[string]string{
+								"prop:::something:prop1": "value1",
+							},
+						},
+					},
+				},
+			},
+			{
+				Effect:   "Deny",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: &Condition{
+					MustHaveAll: &PropertyCondition{
+						StringCondition: StringCondition{
+							StringEqual: map[string]string{
+								"prop:::something:prop2": "value2",
+							},
+						},
+					},
+				},
+			},
+			{
+				Effect:   "Allow",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: &Condition{
+					MustHaveAll: &PropertyCondition{
+						StringCondition: StringCondition{
+							StringEqual: map[string]string{
+								"prop:::something:prop3": "value3",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	res := Resource{
+		Resource: "res:::something",
+		Action:   "act:::something:action1",
+		Properties: Property{
+			String: map[string]string{
+				"prop:::something:prop1": "no",
+				"prop:::something:prop2": "no",
+				"prop:::something:prop3": "no",
+			},
+		},
+	}
+
+	result, err := p.IsAccessAllowed(res)
+	assert.NoError(t, err)
+	assert.Equal(t, DENIED, result)
+}
+
 ////////////////////////////////////////////////////////////////////
 //                    getStatementsForResource                    //
 ////////////////////////////////////////////////////////////////////
