@@ -22,7 +22,7 @@ func considerStatement(stmt Statement, res Resource) (ResultEffect, error) {
 
 	// RULE :
 	// If there are no conditions in this statement,
-	// then The result of this statement is according to Effect.
+	// then the result of this statement is according to Effect.
 	if stmt.Condition == nil {
 		return effect, nil
 	}
