@@ -1,8 +1,11 @@
 # Policy
+Advanced policy for golang application.
+
+![](./docs/images.png)
 
 Language:
-[English](https://github.com/golfz/policy/blob/main/README.md) |
-[ไทย](https://github.com/golfz/policy/blob/main/README_th.md)
+[English](./README.md) |
+[ไทย](./README_th.md)
 
 ![](https://img.shields.io/badge/build-passing-brightgreen)
 ![](https://img.shields.io/badge/coverage-100%25-brightgreen)
