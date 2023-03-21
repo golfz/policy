@@ -15,7 +15,7 @@ const (
 )
 
 func considerStatement(stmt Statement, res Resource) (ResultEffect, error) {
-	effect, err := convertStringToResultEffect(stmt.Effect)
+	effect, err := convertEffectStringToResultEffect(stmt.Effect)
 	if err != nil {
 		return ignored, err
 	}
@@ -54,7 +54,7 @@ func considerStatementConditions(condition Condition, res Resource) (bool, error
 	return isMatched, nil
 }
 
-func convertStringToResultEffect(effect string) (ResultEffect, error) {
+func convertEffectStringToResultEffect(effect string) (ResultEffect, error) {
 	switch effect {
 	case statementEffectAllowString:
 		return ALLOWED, nil
