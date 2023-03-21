@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+////////////////////////////////////////////////////////////////////
+//                   considerPropertyConditions                   //
+////////////////////////////////////////////////////////////////////
+
 func Test_considerPropertyConditions(t *testing.T) {
 	ac := PropertyCondition{
 		StringCondition: StringCondition{

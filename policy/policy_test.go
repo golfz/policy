@@ -1,15 +1,91 @@
 package policy
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestPolicy_IsAccessAllowed_(t *testing.T) {
+////////////////////////////////////////////////////////////////////
+//                    getStatementsForResource                    //
+////////////////////////////////////////////////////////////////////
 
+func Test_IsAccessAllowed_No_Statement_Found_Expect_Denied(t *testing.T) {
+	p := Policy{
+		Version:  1,
+		PolicyID: "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+		Statement: []Statement{
+			{
+				Effect:   "Allow",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+					"act:::something:action2",
+				},
+				Condition: nil,
+			},
+		},
+	}
+
+	res := Resource{
+		Resource:   "res:::something",
+		Action:     "act:::something:action3",
+		Properties: Property{},
+	}
+
+	result, err := p.IsAccessAllowed(res)
+	assert.NoError(t, err)
+	assert.Equal(t, DENIED, result)
 }
 
-func TestPolicy_getStatementsForResource_found_1_from_1(t *testing.T) {
+func Test_IsAccessAllowed_Invalid_Effect_Statement_Expect_Error(t *testing.T) {
+	p := Policy{
+		Version:  1,
+		PolicyID: "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
+		Statement: []Statement{
+			{
+				Effect:   "Invalid",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: nil,
+			},
+			{
+				Effect:   "Allow",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: nil,
+			},
+			{
+				Effect:   "Deny",
+				Resource: "res:::something",
+				Action: []string{
+					"act:::something:action1",
+				},
+				Condition: nil,
+			},
+		},
+	}
+
+	res := Resource{
+		Resource:   "res:::something",
+		Action:     "act:::something:action1",
+		Properties: Property{},
+	}
+
+	_, err := p.IsAccessAllowed(res)
+	assert.Error(t, err)
+	fmt.Println(err)
+}
+
+////////////////////////////////////////////////////////////////////
+//                    getStatementsForResource                    //
+////////////////////////////////////////////////////////////////////
+
+func Test_getStatementsForResource_found_1_from_1(t *testing.T) {
 	strPolicy := `
 	{
 		"Version": 1,
@@ -36,7 +112,7 @@ func TestPolicy_getStatementsForResource_found_1_from_1(t *testing.T) {
 	assert.Equal(t, 1, len(statements))
 }
 
-func TestPolicy_getStatementsForResource_found_2_from_3(t *testing.T) {
+func Test_getStatementsForResource_found_2_from_3(t *testing.T) {
 	strPolicy := `
 	{
 		"Version": 1,
@@ -79,7 +155,7 @@ func TestPolicy_getStatementsForResource_found_2_from_3(t *testing.T) {
 
 // this test case is to test the case when there are 2 statements with same resource
 // but only 1 statement with action
-func TestPolicy_getStatementsForResource_found_only_1_matched_action(t *testing.T) {
+func Test_getStatementsForResource_found_only_1_matched_action(t *testing.T) {
 	// policy have 2 statements with resource "res:::leave"
 	// but only 1 statement with action "act:::leave:approve"
 	jsonPolicy := `
@@ -124,7 +200,7 @@ func TestPolicy_getStatementsForResource_found_only_1_matched_action(t *testing.
 
 // this test case is to test the case when there are 2 statements with same resource
 // but no statement with expected action
-func TestPolicy_getStatementsForResource_found_0_no_matched_action(t *testing.T) {
+func Test_getStatementsForResource_found_0_no_matched_action(t *testing.T) {
 	// policy have 2 statements with resource "res:::leave"
 	// but no statement with action "act:::leave:approve"
 	jsonPolicy := `
@@ -167,7 +243,7 @@ func TestPolicy_getStatementsForResource_found_0_no_matched_action(t *testing.T)
 	assert.Equal(t, 0, len(statements))
 }
 
-func TestPolicy_getStatementsForResource_found_0_no_matched_resource(t *testing.T) {
+func Test_getStatementsForResource_found_0_no_matched_resource(t *testing.T) {
 	jsonPolicy := `
 	{
 		"Version": 1,
@@ -208,7 +284,7 @@ func TestPolicy_getStatementsForResource_found_0_no_matched_resource(t *testing.
 	assert.Equal(t, 0, len(statements))
 }
 
-func TestPolicy_getStatementsForResource_found_0_no_statement(t *testing.T) {
+func Test_getStatementsForResource_found_0_no_statement(t *testing.T) {
 	jsonPolicy := `
 	{
 		"Version": 1,
