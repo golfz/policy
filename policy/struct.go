@@ -18,15 +18,15 @@ type Statement struct {
 }
 
 type Condition struct {
-	AtLeastOne  *AvailableCondition
-	MustHaveAll *AvailableCondition
+	AtLeastOne  *PropertyCondition
+	MustHaveAll *PropertyCondition
 }
 
-type AvailableCondition struct {
+type PropertyCondition struct {
 	StringCondition
 	IntegerCondition
 	FloatCondition
-	BoolCondition
+	BooleanCondition
 	TimeCondition
 }
 
@@ -45,7 +45,7 @@ type FloatCondition struct {
 	FloatEqual map[string]float64   `json:"FloatEqual,omitempty"`
 }
 
-type BoolCondition struct {
+type BooleanCondition struct {
 	BooleanIn    map[string][]bool `json:"BooleanIn,omitempty"`
 	BooleanEqual map[string]bool   `json:"BooleanEqual,omitempty"`
 }
