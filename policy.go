@@ -8,7 +8,7 @@ const (
 	DENIED  ResultEffect = 2
 )
 
-func (p *Policy) IsAccessAllowed(res Resource) (ResultEffect, error) {
+func (p Policy) IsAccessAllowed(res Resource) (ResultEffect, error) {
 	if p.Error != nil {
 		return DENIED, p.Error
 	}
@@ -58,7 +58,7 @@ func (p *Policy) IsAccessAllowed(res Resource) (ResultEffect, error) {
 	return DENIED, nil
 }
 
-func (p *Policy) getStatementsForResource(res Resource) []Statement {
+func (p Policy) getStatementsForResource(res Resource) []Statement {
 	var statements []Statement
 
 	for _, stmt := range p.Statement {
