@@ -1,6 +1,7 @@
 package policy
 
 import (
+	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -9,6 +10,15 @@ import (
 ////////////////////////////////////////////////////////////////////
 //                    getStatementsForResource                    //
 ////////////////////////////////////////////////////////////////////
+
+func TestPolicy_IsAccessAllowed_Error(t *testing.T) {
+	p := Policy{
+		Error: errors.New("error"),
+	}
+
+	_, err := p.IsAccessAllowed(Resource{})
+	assert.Error(t, err)
+}
 
 func Test_IsAccessAllowed_No_Statement_Found_Expect_Denied(t *testing.T) {
 	p := Policy{

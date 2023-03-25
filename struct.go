@@ -8,7 +8,7 @@ type Policy struct {
 	Version   int
 	PolicyID  string
 	Statement []Statement
-	err       error
+	Error     error
 }
 
 type Statement struct {

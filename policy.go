@@ -9,6 +9,10 @@ const (
 )
 
 func (p *Policy) IsAccessAllowed(res Resource) (ResultEffect, error) {
+	if p.Error != nil {
+		return DENIED, p.Error
+	}
+
 	statements := p.getStatementsForResource(res)
 
 	// RULE 1:
