@@ -4,11 +4,17 @@ package policy
 // Policy
 // ----------------------------------------------
 
+type ValidationController struct {
+	Policies           []Policy
+	UserPropertyGetter UserPropertyGetter
+	err                error
+}
+
 type Policy struct {
-	Version   int
-	PolicyID  string
-	Statement []Statement
-	Error     error
+	Version    int
+	PolicyID   string
+	Statements []Statement
+	err        error
 }
 
 type Statement struct {
@@ -18,17 +24,36 @@ type Statement struct {
 	Condition *Condition
 }
 
+//type Condition struct {
+//	AtLeastOne  *PropertyCondition
+//	MustHaveAll *PropertyCondition
+//}
+//
+//type PropertyCondition struct {
+//	StringCondition
+//	IntegerCondition
+//	FloatCondition
+//	BooleanCondition
+//	TimeCondition
+//}
+
 type Condition struct {
-	AtLeastOne  *PropertyCondition
-	MustHaveAll *PropertyCondition
+	AtLeastOne  map[string]Comparator `json:"AtLeastOne"`
+	MustHaveAll map[string]Comparator `json:"MustHaveAll"`
 }
 
-type PropertyCondition struct {
-	StringCondition
-	IntegerCondition
-	FloatCondition
-	BooleanCondition
-	TimeCondition
+type Comparator struct {
+	StringIn      *[]string  `json:"StringIn"`
+	StringEqual   *string    `json:"StringEqual"`
+	IntegerIn     *[]int     `json:"IntegerIn"`
+	IntegerEqual  *int       `json:"IntegerEqual"`
+	FloatIn       *[]float64 `json:"FloatIn"`
+	FloatEqual    *float64   `json:"FloatEqual"`
+	BooleanEqual  *bool      `json:"BooleanEqual"`
+	UserPropEqual *string    `json:"UserPropEqual"`
+	TimeRange     *string    `json:"TimeRange"`
+	DateRange     *string    `json:"DateRange"`
+	DateTimeRange *string    `json:"DateTimeRange"`
 }
 
 type StringCondition struct {
