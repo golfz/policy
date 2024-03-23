@@ -267,7 +267,7 @@ func (ctrl *ValidationController) isMatchedComparator(comparator Comparator, pro
 // ----------------------------------------------
 
 func getMergedStatements(policies []Policy) []Statement {
-	var statements []Statement
+	statements := make([]Statement, 0)
 	for _, policy := range policies {
 		statements = append(statements, policy.Statements...)
 	}
