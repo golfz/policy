@@ -26,19 +26,6 @@ type Statement struct {
 	Condition *Condition
 }
 
-//type Condition struct {
-//	AtLeastOne  *PropertyCondition
-//	MustHaveAll *PropertyCondition
-//}
-//
-//type PropertyCondition struct {
-//	StringCondition
-//	IntegerCondition
-//	FloatCondition
-//	BooleanCondition
-//	TimeCondition
-//}
-
 type Condition struct {
 	AtLeastOne  map[string]Comparator `json:"AtLeastOne"`
 	MustHaveAll map[string]Comparator `json:"MustHaveAll"`
