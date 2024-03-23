@@ -16,14 +16,14 @@ type Policy struct {
 	Version    int
 	PolicyID   string
 	Statements []Statement
-	err        error
+	Err        error
 }
 
 type Statement struct {
-	Effect    string
-	Resource  string
-	Action    []string
-	Condition *Condition
+	Effect     string
+	Resource   string
+	Actions    []string
+	Conditions *Condition
 }
 
 type Condition struct {
