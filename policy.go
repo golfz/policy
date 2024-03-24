@@ -179,7 +179,10 @@ func (ctrl *ValidationController) considerAtLeastOneCondition(conditions map[str
 	if total == 0 {
 		return conditionMatched
 	}
-	return matched > 0
+	if matched > 0 {
+		return conditionMatched
+	}
+	return conditionNotMatched
 }
 
 func (ctrl *ValidationController) considerMustHaveAllCondition(conditions map[string]Comparator, res Resource) bool {
@@ -187,7 +190,10 @@ func (ctrl *ValidationController) considerMustHaveAllCondition(conditions map[st
 	if total == 0 {
 		return conditionMatched
 	}
-	return matched == total
+	if matched == total {
+		return conditionMatched
+	}
+	return conditionNotMatched
 }
 
 func (ctrl *ValidationController) countMatchedConditions(conditions map[string]Comparator, res Resource) (matched, total int) {
