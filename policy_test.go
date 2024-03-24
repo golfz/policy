@@ -6,6 +6,18 @@ import (
 	"testing"
 )
 
+type MockUserGetter struct {
+	UserValue   map[string]string
+	WasCalled   bool
+	WhatIsParam string
+}
+
+func (mock *MockUserGetter) GetUserProperty(key string) string {
+	mock.WasCalled = true
+	mock.WhatIsParam = key
+	return mock.UserValue[key]
+}
+
 func TestIsAccessAllowed(t *testing.T) {
 	t.Run("ValidationController with Error, expect error", func(t *testing.T) {
 		// Arrange
@@ -47,7 +59,38 @@ func TestIsAccessAllowed(t *testing.T) {
 		}
 	})
 
-	t.Run("ValidationController with no matching statements, expect DENIED", func(t *testing.T) {
+	t.Run("no matching resource, expect DENIED", func(t *testing.T) {
+		// Arrange
+		ctrl := ValidationController{
+			Policies: []Policy{
+				{
+					Statements: []Statement{
+						{
+							Resource: "resource1",
+							Effect:   statementEffectAllow,
+						},
+					},
+				},
+			},
+		}
+		res := Resource{
+			Resource: "resource2",
+		}
+		want := DENIED
+
+		// Act
+		result, err := ctrl.IsAccessAllowed(res)
+
+		// Assert
+		if result != want {
+			t.Errorf("want %v, but got %v", want, result)
+		}
+		if err != nil {
+			t.Errorf("want nil, but got %v", err)
+		}
+	})
+
+	t.Run("no matching Action, expect DENIED", func(t *testing.T) {
 		// Arrange
 		ctrl := ValidationController{
 			Policies: []Policy{
@@ -63,8 +106,8 @@ func TestIsAccessAllowed(t *testing.T) {
 			},
 		}
 		res := Resource{
-			Resource: "resource2",
-			Action:   "action1",
+			Resource: "resource1",
+			Action:   "action3",
 		}
 		want := DENIED
 
@@ -77,6 +120,683 @@ func TestIsAccessAllowed(t *testing.T) {
 		}
 		if err != nil {
 			t.Errorf("want nil, but got %v", err)
+		}
+	})
+
+	t.Run("matching Resource and Action, expect ALLOWED", func(t *testing.T) {
+		// Arrange
+		ctrl := ValidationController{
+			Policies: []Policy{
+				{
+					Statements: []Statement{
+						{
+							Resource: "resource1",
+							Actions:  []string{"action1", "action2"},
+							Effect:   statementEffectAllow,
+						},
+					},
+				},
+			},
+		}
+		res := Resource{
+			Resource: "resource1",
+			Action:   "action2",
+		}
+		want := ALLOWED
+
+		// Act
+		result, err := ctrl.IsAccessAllowed(res)
+
+		// Assert
+		if result != want {
+			t.Errorf("want %v, but got %v", want, result)
+		}
+		if err != nil {
+			t.Errorf("want nil, but got %v", err)
+		}
+	})
+
+	t.Run("Rule 1 no matched statements (Resource and Action not matched), expect DENIED", func(t *testing.T) {
+		// Arrange
+		ctrl := ValidationController{
+			Policies: []Policy{
+				{
+					PolicyID: "policy-A",
+					Statements: []Statement{
+						{
+							Effect:     "Allow",
+							Resource:   "resource1",
+							Actions:    []string{"action1", "action2"},
+							Conditions: nil,
+						},
+					},
+				},
+				{
+					PolicyID: "policy-B",
+					Statements: []Statement{
+						{
+							Effect:     "Allow",
+							Resource:   "resource2",
+							Actions:    []string{"action1", "action2"},
+							Conditions: nil,
+						},
+					},
+				},
+			},
+		}
+		res := Resource{
+			Resource: "resource3",
+			Action:   "action3",
+		}
+
+		// Act
+		result, err := ctrl.IsAccessAllowed(res)
+
+		// Assert
+		if err != nil {
+			t.Errorf("err: '%v', but want nil", err)
+		}
+		if result != DENIED {
+			t.Errorf("got result '%#v', but want DENIED", result)
+		}
+	})
+
+	t.Run("Rule 1 no matched statements (AtLeastOne not matched), expect DENIED", func(t *testing.T) {
+		// Arrange
+		propKey := "key"
+		propVal := "value"
+		ctrl := ValidationController{
+			Policies: []Policy{
+				{
+					PolicyID: "policy-A",
+					Statements: []Statement{
+						{
+							Effect:   "Allow",
+							Resource: "resource1",
+							Actions:  []string{"action1", "action2"},
+							Conditions: &Condition{
+								AtLeastOne: map[string]Comparator{
+									propKey: {
+										StringEqual: &propVal,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		res := Resource{
+			Resource: "resource1",
+			Action:   "action1",
+			Properties: Property{
+				String: map[string]string{
+					propKey: propVal + "!!!!",
+				},
+			},
+		}
+
+		// Act
+		result, err := ctrl.IsAccessAllowed(res)
+
+		// Assert
+		if err != nil {
+			t.Errorf("err: '%v', but want nil", err)
+		}
+		if result != DENIED {
+			t.Errorf("got result '%#v', but want DENIED", result)
+		}
+	})
+
+	t.Run("Rule 1 no matched statements (MustHaveAll not matched), expect DENIED", func(t *testing.T) {
+		// Arrange
+		propKey := "key"
+		propVal := "value"
+		list := []string{"hello", "world"}
+		ctrl := ValidationController{
+			Policies: []Policy{
+				{
+					PolicyID: "policy-A",
+					Statements: []Statement{
+						{
+							Effect:   "Allow",
+							Resource: "resource1",
+							Actions:  []string{"action1", "action2"},
+							Conditions: &Condition{
+								MustHaveAll: map[string]Comparator{
+									propKey: {
+										StringEqual: &propVal,
+										StringIn:    &list,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		res := Resource{
+			Resource: "resource1",
+			Action:   "action1",
+			Properties: Property{
+				String: map[string]string{
+					propKey: propVal + "!!!!",
+				},
+			},
+		}
+
+		// Act
+		result, err := ctrl.IsAccessAllowed(res)
+
+		// Assert
+		if err != nil {
+			t.Errorf("err: '%v', but want nil", err)
+		}
+		if result != DENIED {
+			t.Errorf("got result '%#v', but want DENIED", result)
+		}
+	})
+
+	t.Run("Rule 2 there is at least one 'Deny', expect DENIED", func(t *testing.T) {
+		// Arrange
+		propKey := "key"
+		propVal := "value"
+		ctrl := ValidationController{
+			Policies: []Policy{
+				{
+					PolicyID: "policy-A",
+					Statements: []Statement{
+						{
+							Effect:   "Deny",
+							Resource: "resource1",
+							Actions:  []string{"action1", "action2"},
+							Conditions: &Condition{
+								AtLeastOne: map[string]Comparator{
+									propKey: {
+										StringEqual: &propVal,
+									},
+								},
+							},
+						},
+						{
+							Effect:   "Allow",
+							Resource: "resource1",
+							Actions:  []string{"action1", "action2"},
+							Conditions: &Condition{
+								AtLeastOne: map[string]Comparator{
+									propKey: {
+										StringEqual: &propVal,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		res := Resource{
+			Resource: "resource1",
+			Action:   "action1",
+			Properties: Property{
+				String: map[string]string{
+					propKey: propVal,
+				},
+			},
+		}
+
+		// Act
+		result, err := ctrl.IsAccessAllowed(res)
+
+		// Assert
+		if err != nil {
+			t.Errorf("err: '%v', but want nil", err)
+		}
+		if result != DENIED {
+			t.Errorf("got result '%#v', but want DENIED", result)
+		}
+	})
+
+	t.Run("Rule 3 all matched-statements are 'Allow', expect ALLOWED", func(t *testing.T) {
+		// Arrange
+		propKey := "key"
+		propVal := "value"
+		ctrl := ValidationController{
+			Policies: []Policy{
+				{
+					PolicyID: "policy-A",
+					Statements: []Statement{
+						{
+							Effect:   "Allow",
+							Resource: "resource1",
+							Actions:  []string{"action1", "action2"},
+							Conditions: &Condition{
+								AtLeastOne: map[string]Comparator{
+									propKey: {
+										StringEqual: &propVal,
+									},
+								},
+							},
+						},
+						{
+							Effect:   "Allow",
+							Resource: "resource1",
+							Actions:  []string{"action1", "action2"},
+							Conditions: &Condition{
+								AtLeastOne: map[string]Comparator{
+									propKey: {
+										StringEqual: &propVal,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+		res := Resource{
+			Resource: "resource1",
+			Action:   "action1",
+			Properties: Property{
+				String: map[string]string{
+					propKey: propVal,
+				},
+			},
+		}
+
+		// Act
+		result, err := ctrl.IsAccessAllowed(res)
+
+		// Assert
+		if err != nil {
+			t.Errorf("err: '%v', but want nil", err)
+		}
+		if result != ALLOWED {
+			t.Errorf("got result '%#v', but want ALLOWED", result)
+		}
+	})
+
+}
+
+func TestIsMatchedComparator_String(t *testing.T) {
+	ctrl := ValidationController{}
+	valueRefKey := "key"
+	testCases := []struct {
+		name                string
+		want                bool
+		propString          string
+		expectedStringEqual string
+		expectedStringIn    []string
+	}{
+		{
+			name:                "Equal",
+			want:                true,
+			propString:          "hello",
+			expectedStringEqual: "hello",
+		},
+		{
+			name:                "Not Equal",
+			want:                false,
+			propString:          "hello",
+			expectedStringEqual: "bye",
+		},
+		{
+			name:             "In",
+			want:             true,
+			propString:       "hello",
+			expectedStringIn: []string{"hello", "world"},
+		},
+		{
+			name:             "Not In",
+			want:             false,
+			propString:       "bye",
+			expectedStringIn: []string{"hello", "world"},
+		},
+		{
+			name:                "Both Equal and In",
+			want:                true,
+			propString:          "hello",
+			expectedStringEqual: "hello",
+			expectedStringIn:    []string{"hello", "world"},
+		},
+		{
+			name:                "Not Equal and not In",
+			want:                false,
+			propString:          "bye",
+			expectedStringEqual: "hello",
+			expectedStringIn:    []string{"hello", "world"},
+		},
+		{
+			name:                "Equal, but not In",
+			want:                false,
+			propString:          "bye",
+			expectedStringEqual: "bye",
+			expectedStringIn:    []string{"hello", "world"},
+		},
+		{
+			name:                "Not Equal, but In",
+			want:                false,
+			propString:          "hello",
+			expectedStringEqual: "bye",
+			expectedStringIn:    []string{"hello", "world"},
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			prop := Property{
+				String: map[string]string{valueRefKey: tt.propString},
+			}
+			comparator := Comparator{}
+			if tt.expectedStringEqual != "" {
+				comparator.StringEqual = &tt.expectedStringEqual
+			}
+			if len(tt.expectedStringIn) != 0 {
+				comparator.StringIn = &tt.expectedStringIn
+			}
+
+			// Act
+			got := ctrl.isMatchedComparator(comparator, prop, valueRefKey)
+
+			// Assert
+			if got != tt.want {
+				t.Errorf("got %v, but want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsMatchedComparator_Integer(t *testing.T) {
+	ctrl := ValidationController{}
+	valueRefKey := "key"
+	testCases := []struct {
+		name                 string
+		want                 bool
+		propInteger          int
+		expectedIntegerEqual int
+		expectedIntegerIn    []int
+	}{
+		{
+			name:                 "Equal",
+			want:                 true,
+			propInteger:          1,
+			expectedIntegerEqual: 1,
+		},
+		{
+			name:                 "Not Equal",
+			want:                 false,
+			propInteger:          1,
+			expectedIntegerEqual: 2,
+		},
+		{
+			name:              "In",
+			want:              true,
+			propInteger:       1,
+			expectedIntegerIn: []int{1, 2},
+		},
+		{
+			name:              "Not In",
+			want:              false,
+			propInteger:       3,
+			expectedIntegerIn: []int{1, 2},
+		},
+		{
+			name:                 "Both Equal and In",
+			want:                 true,
+			propInteger:          1,
+			expectedIntegerEqual: 1,
+			expectedIntegerIn:    []int{1, 2},
+		},
+		{
+			name:                 "Not Equal and Not In",
+			want:                 false,
+			propInteger:          3,
+			expectedIntegerEqual: 1,
+			expectedIntegerIn:    []int{1, 2},
+		},
+		{
+			name:                 "Equal, but not In",
+			want:                 false,
+			propInteger:          3,
+			expectedIntegerEqual: 3,
+			expectedIntegerIn:    []int{1, 2},
+		},
+		{
+			name:                 "Not Equal, but In",
+			want:                 false,
+			propInteger:          1,
+			expectedIntegerEqual: 3,
+			expectedIntegerIn:    []int{1, 2},
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			prop := Property{
+				Integer: map[string]int{valueRefKey: tt.propInteger},
+			}
+			comparator := Comparator{}
+			if tt.expectedIntegerEqual != 0 {
+				comparator.IntegerEqual = &tt.expectedIntegerEqual
+			}
+			if len(tt.expectedIntegerIn) != 0 {
+				comparator.IntegerIn = &tt.expectedIntegerIn
+			}
+
+			// Act
+			got := ctrl.isMatchedComparator(comparator, prop, valueRefKey)
+
+			// Assert
+			if got != tt.want {
+				t.Errorf("got %v, but want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsMatchedComparator_Float(t *testing.T) {
+	ctrl := ValidationController{}
+	valueRefKey := "key"
+	testCases := []struct {
+		name               string
+		want               bool
+		propFloat          float64
+		expectedFloatEqual float64
+		expectedFloatIn    []float64
+	}{
+		{
+			name:               "Equal",
+			want:               true,
+			propFloat:          1,
+			expectedFloatEqual: 1,
+		},
+		{
+			name:               "Not Equal",
+			want:               false,
+			propFloat:          1,
+			expectedFloatEqual: 2,
+		},
+		{
+			name:            "In",
+			want:            true,
+			propFloat:       1,
+			expectedFloatIn: []float64{1, 2},
+		},
+		{
+			name:            "Not In",
+			want:            false,
+			propFloat:       3,
+			expectedFloatIn: []float64{1, 2},
+		},
+		{
+			name:               "Both Equal and In",
+			want:               true,
+			propFloat:          1,
+			expectedFloatEqual: 1,
+			expectedFloatIn:    []float64{1, 2},
+		},
+		{
+			name:               "Not Equal and Not In",
+			want:               false,
+			propFloat:          3,
+			expectedFloatEqual: 1,
+			expectedFloatIn:    []float64{1, 2},
+		},
+		{
+			name:               "Equal, but not In",
+			want:               false,
+			propFloat:          3,
+			expectedFloatEqual: 3,
+			expectedFloatIn:    []float64{1, 2},
+		},
+		{
+			name:               "Not Equal, but In",
+			want:               false,
+			propFloat:          1,
+			expectedFloatEqual: 3,
+			expectedFloatIn:    []float64{1, 2},
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			prop := Property{
+				Float: map[string]float64{valueRefKey: tt.propFloat},
+			}
+			comparator := Comparator{}
+			if tt.expectedFloatEqual != 0 {
+				comparator.FloatEqual = &tt.expectedFloatEqual
+			}
+			if len(tt.expectedFloatIn) != 0 {
+				comparator.FloatIn = &tt.expectedFloatIn
+			}
+
+			// Act
+			got := ctrl.isMatchedComparator(comparator, prop, valueRefKey)
+
+			// Assert
+			if got != tt.want {
+				t.Errorf("got %v, but want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsMatchedComparator_Bool(t *testing.T) {
+	ctrl := ValidationController{}
+	valueRefKey := "key"
+	testCases := []struct {
+		name                 string
+		want                 bool
+		propBoolean          bool
+		expectedBooleanEqual bool
+	}{
+		{
+			name:                 "Equal",
+			want:                 true,
+			propBoolean:          true,
+			expectedBooleanEqual: true,
+		},
+		{
+			name:                 "Not Equal",
+			want:                 false,
+			propBoolean:          true,
+			expectedBooleanEqual: false,
+		},
+	}
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			prop := Property{
+				Boolean: map[string]bool{valueRefKey: tt.propBoolean},
+			}
+			comparator := Comparator{
+				BooleanEqual: &tt.expectedBooleanEqual,
+			}
+
+			// Act
+			got := ctrl.isMatchedComparator(comparator, prop, valueRefKey)
+
+			// Assert
+			if got != tt.want {
+				t.Errorf("got %v, but want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+// Todo: implementing
+func TestIsMatchedComparator_UserProp(t *testing.T) {
+	t.Run("matched", func(t *testing.T) {
+		// Arrange
+		want := true
+		valueRefKey := "prop-key"
+		propValue := "value1"
+		userKey := "user-key1"
+		mock := MockUserGetter{
+			UserValue: map[string]string{
+				"user-key1": "value1",
+				"user-key2": "value2",
+			},
+		}
+		ctrl := ValidationController{
+			UserPropertyGetter: &mock,
+		}
+		comparator := Comparator{
+			UserPropEqual: &userKey,
+		}
+		prop := Property{
+			String: map[string]string{valueRefKey: propValue},
+		}
+
+		// Act
+		got := ctrl.isMatchedComparator(comparator, prop, valueRefKey)
+
+		// Assert
+		if got != want {
+			t.Errorf("got %v, but want %v", got, want)
+		}
+		if !mock.WasCalled {
+			t.Errorf("mock function was not called, expect called")
+		}
+		if mock.WhatIsParam != "user-key1" {
+			t.Errorf("param is '%v', but expect 'user-key1'", mock.WhatIsParam)
+		}
+	})
+
+	t.Run("not matched", func(t *testing.T) {
+		// Arrange
+		want := false
+		valueRefKey := "prop-key"
+		propValue := "value1"
+		userKey := "user-key1"
+		mock := MockUserGetter{
+			UserValue: map[string]string{
+				"user-key1": "value1111",
+				"user-key2": "value2222",
+			},
+		}
+		ctrl := ValidationController{
+			UserPropertyGetter: &mock,
+		}
+		comparator := Comparator{
+			UserPropEqual: &userKey,
+		}
+		prop := Property{
+			String: map[string]string{valueRefKey: propValue},
+		}
+
+		// Act
+		got := ctrl.isMatchedComparator(comparator, prop, valueRefKey)
+
+		// Assert
+		if got != want {
+			t.Errorf("got %v, but want %v", got, want)
+		}
+		if !mock.WasCalled {
+			t.Errorf("mock function was not called, expect called")
+		}
+		if mock.WhatIsParam != "user-key1" {
+			t.Errorf("param is '%v', but expect 'user-key1'", mock.WhatIsParam)
 		}
 	})
 
@@ -138,17 +858,17 @@ func TestIsValidEffect(t *testing.T) {
 		want  bool
 	}{
 		{
-			name:  "Allow effect",
+			name:  "effect='ALLOW', expect true",
 			input: statementEffectAllow,
 			want:  true,
 		},
 		{
-			name:  "Deny effect",
+			name:  "effect='DENY', expect true",
 			input: statementEffectDeny,
 			want:  true,
 		},
 		{
-			name:  "Invalid effect",
+			name:  "effect='Invalid Effect', expect false",
 			input: "Invalid Effect",
 			want:  false,
 		},

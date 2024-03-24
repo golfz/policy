@@ -82,7 +82,7 @@ type Property struct {
 // ----------------------------------------------
 
 type UserPropertyGetter interface {
-	GetUserProperty(prop string) string
+	GetUserProperty(key string) string
 }
 
 type Validator interface {
@@ -110,10 +110,8 @@ func (ctrl *ValidationController) IsAccessAllowed(res Resource) (ResultEffect, e
 	if err = ctrl.validateStatements(statements); err != nil {
 		return DENIED, err
 	}
-	statements, err = ctrl.filterMatchedStatements(statements, res)
-	if err != nil {
-		return DENIED, err
-	}
+	statements = ctrl.filterWithResourceAndAction(statements, res)
+	statements = ctrl.filterWithStatementConditions(statements, res)
 
 	// Rule 1: If there are no matching statements, then the result is "DENIED".
 	if len(statements) == 0 {
@@ -142,72 +140,57 @@ func (ctrl *ValidationController) validateStatements(statements []Statement) err
 	return nil
 }
 
-func (ctrl *ValidationController) filterMatchedStatements(statements []Statement, res Resource) ([]Statement, error) {
+func (ctrl *ValidationController) filterWithResourceAndAction(statements []Statement, res Resource) []Statement {
 	var filteredStatements []Statement
 	for _, stmt := range statements {
-		// filter by resource and action
-		if stmt.Resource != res.Resource {
-			continue
+		if stmt.Resource == res.Resource && isContainsInList(stmt.Actions, res.Action) {
+			filteredStatements = append(filteredStatements, stmt)
 		}
-		if !isContainsInList(stmt.Actions, res.Action) {
-			continue
-		}
+	}
+	return filteredStatements
+}
 
+func (ctrl *ValidationController) filterWithStatementConditions(statements []Statement, res Resource) []Statement {
+	var filteredStatements []Statement
+	for _, stmt := range statements {
 		// Rule 4: If there are no conditions, then the statement is considered matched.
 		if stmt.Conditions == nil {
 			filteredStatements = append(filteredStatements, stmt)
 			continue
 		}
 
-		isMatched, err := ctrl.considerStatementConditions(*stmt.Conditions, res)
-		if err != nil {
-			return nil, err
-		}
+		isMatched := ctrl.considerStatementConditions(*stmt.Conditions, res)
 		if isMatched {
 			filteredStatements = append(filteredStatements, stmt)
 		}
 	}
-	return filteredStatements, nil
+	return filteredStatements
 }
 
-func (ctrl *ValidationController) considerStatementConditions(condition Condition, res Resource) (bool, error) {
-	isAtLeastOneConditionMatched, err := ctrl.considerAtLeastOneCondition(condition.AtLeastOne, res)
-	if err != nil {
-		return conditionNotMatched, err
-	}
-
-	isMustHaveAllConditionMatched, err := ctrl.considerMustHaveAllCondition(condition.MustHaveAll, res)
-	if err != nil {
-		return conditionNotMatched, err
-	}
-
+func (ctrl *ValidationController) considerStatementConditions(condition Condition, res Resource) bool {
+	isAtLeastOneConditionMatched := ctrl.considerAtLeastOneCondition(condition.AtLeastOne, res)
+	isMustHaveAllConditionMatched := ctrl.considerMustHaveAllCondition(condition.MustHaveAll, res)
 	isMatched := isAtLeastOneConditionMatched && isMustHaveAllConditionMatched
-	return isMatched, nil
+	return isMatched
 }
 
-func (ctrl *ValidationController) considerAtLeastOneCondition(conditions map[string]Comparator, res Resource) (bool, error) {
-	matched, total, err := ctrl.countMatchedConditions(conditions, res)
-	if err != nil {
-		return conditionNotMatched, err
-	}
+func (ctrl *ValidationController) considerAtLeastOneCondition(conditions map[string]Comparator, res Resource) bool {
+	matched, total := ctrl.countMatchedConditions(conditions, res)
 	if total == 0 {
-		return conditionMatched, nil
+		return conditionMatched
 	}
-	return matched > 0, nil
+	return matched > 0
 }
 
-func (ctrl *ValidationController) considerMustHaveAllCondition(conditions map[string]Comparator, res Resource) (bool, error) {
-	matched, total, err := ctrl.countMatchedConditions(conditions, res)
-	if err != nil {
-		return conditionNotMatched, err
-	}
+func (ctrl *ValidationController) considerMustHaveAllCondition(conditions map[string]Comparator, res Resource) bool {
+	matched, total := ctrl.countMatchedConditions(conditions, res)
 	if total == 0 {
-		return conditionMatched, nil
+		return conditionMatched
 	}
-	return matched == total, nil
+	return matched == total
 }
 
-func (ctrl *ValidationController) countMatchedConditions(conditions map[string]Comparator, res Resource) (matched, total int, err error) {
+func (ctrl *ValidationController) countMatchedConditions(conditions map[string]Comparator, res Resource) (matched, total int) {
 	total = len(conditions)
 	for valueRefKey, comparator := range conditions {
 		if ctrl.isMatchedComparator(comparator, res.Properties, valueRefKey) {
@@ -224,7 +207,7 @@ func (ctrl *ValidationController) isMatchedComparator(comparator Comparator, pro
 		}
 	}
 	if comparator.StringEqual != nil {
-		if *comparator.StringEqual != prop.String[valueRefKey] {
+		if !isEquals(*comparator.StringEqual, prop.String[valueRefKey]) {
 			return false
 		}
 	}
@@ -234,7 +217,7 @@ func (ctrl *ValidationController) isMatchedComparator(comparator Comparator, pro
 		}
 	}
 	if comparator.IntegerEqual != nil {
-		if *comparator.IntegerEqual != prop.Integer[valueRefKey] {
+		if !isEquals(*comparator.IntegerEqual, prop.Integer[valueRefKey]) {
 			return false
 		}
 	}
@@ -244,12 +227,12 @@ func (ctrl *ValidationController) isMatchedComparator(comparator Comparator, pro
 		}
 	}
 	if comparator.FloatEqual != nil {
-		if *comparator.FloatEqual != prop.Float[valueRefKey] {
+		if !isEquals(*comparator.FloatEqual, prop.Float[valueRefKey]) {
 			return false
 		}
 	}
 	if comparator.BooleanEqual != nil {
-		if *comparator.BooleanEqual != prop.Boolean[valueRefKey] {
+		if !isEquals(*comparator.BooleanEqual, prop.Boolean[valueRefKey]) {
 			return false
 		}
 	}
