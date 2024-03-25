@@ -506,6 +506,42 @@ func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:     "[no conditions] matched Allow statement, expect ALLOWED",
+			file:     "test_data/is_access_allowed/1policy_no_conditions.json",
+			expected: ALLOWED,
+			resource: Resource{
+				Resource: "res:::resource_1",
+				Action:   "act:::resource_1:action_1",
+			},
+		},
+		{
+			name:     "[no conditions] matched Deny statement, expect DENIED",
+			file:     "test_data/is_access_allowed/1policy_no_conditions.json",
+			expected: DENIED,
+			resource: Resource{
+				Resource: "res:::resource_2",
+				Action:   "act:::resource_2:action_1",
+			},
+		},
+		{
+			name:     "[nil conditions] matched Allow statement, expect ALLOWED",
+			file:     "test_data/is_access_allowed/1policy_nil_conditions.json",
+			expected: ALLOWED,
+			resource: Resource{
+				Resource: "res:::resource_1",
+				Action:   "act:::resource_1:action_1",
+			},
+		},
+		{
+			name:     "[nil conditions] matched Deny statement, expect DENIED",
+			file:     "test_data/is_access_allowed/1policy_nil_conditions.json",
+			expected: DENIED,
+			resource: Resource{
+				Resource: "res:::resource_2",
+				Action:   "act:::resource_2:action_1",
+			},
+		},
 	}
 
 	for _, test := range tests {
