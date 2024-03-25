@@ -1,150 +1,124 @@
 package policy
 
 import (
-	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
-func TestParseJSON(t *testing.T) {
-	strPolicy := `
-	{
-		"Version": 1,
-		"PolicyID": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
-		"Statement": [	
-			{
-				"Effect": "Allow",
-				"Resource": "res:::leave",
-				"Action": ["act:::leave:approve"],
-				"Condition": {
-					"AtLeastOne": {
-						"StringIn": {
-							"prop:::employee:employee_uuid": [
-								"11111111",  
-                            	"22222222",  
-                            	"33333333",  
-                            	"44444444" 
-							]	
-						}
-					},  
-					"MustHaveAll": {  
-						"DateRange": {  
-							"sys:::now:date": {   
-								"to": "2023-01-31"  
-							}                    
-						}                
-					}  
-				}	
-			}
-		]
-	}`
-	p, err := ParseJSON([]byte(strPolicy))
-	assert.NoError(t, err)
+// ----------------------------------------------
+// Policy
+// ----------------------------------------------
 
-	assert.Equal(t, 1, p.Version)
-	assert.Equal(t, 1, len(p.Statement))
+func TestParsePolicy_Full(t *testing.T) {
+	// Arrange
+	b, err := os.ReadFile("test_data/parse_policy/policy_full.json")
+	if err != nil {
+		t.Error(err)
+	}
 
-	assert.NotNil(t, p.Statement[0].Condition.AtLeastOne.StringIn)
-	assert.Nil(t, p.Statement[0].Condition.AtLeastOne.StringEqual)
-	assert.Contains(t, p.Statement[0].Condition.AtLeastOne.StringIn["prop:::employee:employee_uuid"], "11111111")
+	// Act
+	p, err := ParsePolicy(b)
 
-	assert.NotNil(t, p.Statement[0].Condition.MustHaveAll.DateRange)
-	assert.Empty(t, p.Statement[0].Condition.MustHaveAll.DateRange["sys:::now:date"].From)
+	// Assert
+	if err != nil {
+		t.Error(err)
+	}
+	if len(p.Statements) != 2 {
+		t.Errorf("Expected 2 statements, but got %d", len(p.Statements))
+	}
+	if p.Statements[0].Effect != "Allow" {
+		t.Errorf("Expected Allow, but got %s", p.Statements[0].Effect)
+	}
+	if p.Statements[1].Effect != "Deny" {
+		t.Errorf("Expected Deny, but got %s", p.Statements[1].Effect)
+	}
+	if p.Statements[0].Conditions == nil {
+		t.Error("Expected conditions in the first statement to be not nil")
+	}
+	if p.Statements[1].Conditions == nil {
+		t.Error("Expected conditions in the second statement to be not nil")
+	}
+	if p.Statements[1].Conditions.AtLeastOne == nil {
+		t.Error("Expected AtLeastOne in the second statement to be not nil")
+	}
+	if p.Statements[1].Conditions.MustHaveAll == nil {
+		t.Error("Expected MustHaveAll in the second statement to be not nil")
+	}
+	if len(p.Statements[1].Conditions.AtLeastOne) != 2 {
+		t.Errorf("Expected 2 AtLeastOne conditions, but got %d", len(p.Statements[1].Conditions.AtLeastOne))
+	}
+	if len(p.Statements[1].Conditions.MustHaveAll) != 2 {
+		t.Errorf("Expected 2 MustHaveAll conditions, but got %d", len(p.Statements[1].Conditions.MustHaveAll))
+	}
+
+	if p.Statements[0].Conditions.AtLeastOne["prop:::resource_1:prop_1"].StringEqual == nil {
+		t.Error("Expected StringEqual in the first statement to be not nil")
+	}
+	if *p.Statements[0].Conditions.AtLeastOne["prop:::resource_1:prop_1"].StringEqual != "hello" {
+		t.Errorf("Expected hello, but got %s", *p.Statements[0].Conditions.AtLeastOne["prop:::resource_1:prop_1"].StringEqual)
+	}
 }
 
-func TestParseJSON_No_Condition(t *testing.T) {
-	strPolicy := `
-	{
-		"Version": 1,
-		"PolicyID": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
-		"Statement": [	
-			{
-				"Effect": "Allow",
-				"Resource": "res:::leave",
-				"Action": ["act:::leave:approve"]
-			}
-		]
-	}`
-	p, err := ParseJSON([]byte(strPolicy))
-	assert.NoError(t, err)
+func TestParsePolicy_NoCondition(t *testing.T) {
+	// Arrange
+	b, err := os.ReadFile("test_data/parse_policy/policy_no_condition.json")
+	if err != nil {
+		t.Error(err)
+	}
 
-	assert.Equal(t, 1, p.Version)
-	assert.Equal(t, 1, len(p.Statement))
+	// Act
+	p, err := ParsePolicy(b)
 
-	assert.Nil(t, p.Statement[0].Condition)
+	// Assert
+	if err != nil {
+		t.Error(err)
+	}
+	if len(p.Statements) != 1 {
+		t.Errorf("Expected 2 statements, but got %d", len(p.Statements))
+	}
+	if p.Statements[0].Conditions != nil {
+		t.Error("Expected conditions in the first statement to be nil")
+	}
+
 }
 
-func TestParseJSON_No_MustHaveAll(t *testing.T) {
-	strPolicy := `
-	{
-		"Version": 1,
-		"PolicyID": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
-		"Statement": [	
-			{
-				"Effect": "Allow",
-				"Resource": "res:::leave",
-				"Action": ["act:::leave:approve"],
-				"Condition": {
-					"AtLeastOne": {
-						"StringIn": {
-							"prop:::employee:employee_uuid": [
-								"11111111",  
-                            	"22222222",  
-                            	"33333333",  
-                            	"44444444" 
-							]	
-						}
-					}
-				}	
-			}
-		]
-	}`
-	p, err := ParseJSON([]byte(strPolicy))
-	assert.NoError(t, err)
+// ----------------------------------------------
+// PolicyArray
+// ----------------------------------------------
 
-	assert.Equal(t, 1, p.Version)
-	assert.Equal(t, 1, len(p.Statement))
+func TestParsePolicyArray_Full(t *testing.T) {
+	// Arrange
+	b, err := os.ReadFile("test_data/parse_policy/policy_array_full.json")
+	if err != nil {
+		t.Error(err)
+	}
 
-	assert.NotNil(t, p.Statement[0].Condition)
-	assert.NotNil(t, p.Statement[0].Condition.AtLeastOne)
-	assert.NotNil(t, p.Statement[0].Condition.AtLeastOne.StringIn)
+	// Act
+	p, err := ParsePolicyArray(b)
 
-	assert.Nil(t, p.Statement[0].Condition.MustHaveAll)
-}
-
-func TestParseJSON_No_AtLeastOne(t *testing.T) {
-	strPolicy := `
-	{
-		"Version": 1,
-		"PolicyID": "501228f3-f7f3-4ef1-8bc9-9fb73347f518",
-		"Statement": [	
-			{
-				"Effect": "Allow",
-				"Resource": "res:::leave",
-				"Action": ["act:::leave:approve"],
-				"Condition": {
-					"MustHaveAll": {
-						"StringIn": {
-							"prop:::employee:employee_uuid": [
-								"11111111",  
-                            	"22222222",  
-                            	"33333333",  
-                            	"44444444" 
-							]	
-						}
-					}
-				}	
-			}
-		]
-	}`
-	p, err := ParseJSON([]byte(strPolicy))
-	assert.NoError(t, err)
-
-	assert.Equal(t, 1, p.Version)
-	assert.Equal(t, 1, len(p.Statement))
-
-	assert.NotNil(t, p.Statement[0].Condition)
-	assert.NotNil(t, p.Statement[0].Condition.MustHaveAll)
-	assert.NotNil(t, p.Statement[0].Condition.MustHaveAll.StringIn)
-
-	assert.Nil(t, p.Statement[0].Condition.AtLeastOne)
+	// Assert
+	if err != nil {
+		t.Error(err)
+	}
+	if len(p) != 2 {
+		t.Errorf("Expected 2 policies, but got %d", len(p))
+	}
+	if len(p[0].Statements) != 2 {
+		t.Errorf("Expected 2 statements in the first policy, but got %d", len(p[0].Statements))
+	}
+	if len(p[1].Statements) != 2 {
+		t.Errorf("Expected 2 statements in the second policy, but got %d", len(p[1].Statements))
+	}
+	if p[0].Statements[0].Effect != "Allow" {
+		t.Errorf("Expected Allow in the first policy, but got %s", p[0].Statements[0].Effect)
+	}
+	if p[0].Statements[1].Effect != "Deny" {
+		t.Errorf("Expected Deny in the first policy, but got %s", p[0].Statements[1].Effect)
+	}
+	if p[1].Statements[0].Effect != "Allow" {
+		t.Errorf("Expected Allow in the second policy, but got %s", p[1].Statements[0].Effect)
+	}
+	if p[1].Statements[1].Effect != "Deny" {
+		t.Errorf("Expected Deny in the second policy, but got %s", p[1].Statements[1].Effect)
+	}
 }

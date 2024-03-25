@@ -1,0 +1,14 @@
+{
+    "Version": 1,
+    "PolicyID": "policy_no_condition",
+    "Statements": [
+        {
+            "Effect": "Allow",
+            "Resource": "res:::resource_1",
+            "Actions": [
+                "act:::resource_1:action_1",
+                "act:::resource_1:action_2"
+            ]
+        }
+    ]
+}

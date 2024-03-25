@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_isContainsInList(t *testing.T) {
+func TestIsContainsInList(t *testing.T) {
 	// Test empty list
 	list := []int{}
 	s := 5
@@ -28,7 +28,7 @@ func Test_isContainsInList(t *testing.T) {
 	assert.False(t, isContainsInList(list, s))
 }
 
-func Test_isEquals(t *testing.T) {
+func TestIsEquals(t *testing.T) {
 	// Test with equal integers
 	a := 5
 	b := 5
