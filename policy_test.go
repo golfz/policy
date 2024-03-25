@@ -418,7 +418,6 @@ func TestIsAccessAllowed(t *testing.T) {
 
 }
 
-// Todo: implementing
 func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
 	tests := []struct {
 		name     string
