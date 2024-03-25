@@ -2,6 +2,7 @@ package policy
 
 import (
 	"errors"
+	"os"
 	"reflect"
 	"testing"
 )
@@ -417,6 +418,117 @@ func TestIsAccessAllowed(t *testing.T) {
 
 }
 
+// Todo: implementing
+func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		file     string
+		resource Resource
+		expected ResultEffect
+	}{
+		{
+			name:     "[full conditions] matched Allow statement, expect ALLOWED",
+			file:     "test_data/is_access_allowed/1policy_full_conditions.json",
+			expected: ALLOWED,
+			resource: Resource{
+				Resource: "res:::resource_1",
+				Action:   "act:::resource_1:action_1",
+				Properties: Property{
+					String: map[string]string{
+						"prop:::resource_1:prop_1": "hello",
+					},
+					Integer: map[string]int{
+						"prop:::resource_1:prop_3": 1,
+					},
+					Boolean: map[string]bool{
+						"prop:::resource_1:prop_4": true,
+					},
+				},
+			},
+		},
+		{
+			name:     "[full conditions] matched Deny statement, expect DENIED",
+			file:     "test_data/is_access_allowed/1policy_full_conditions.json",
+			expected: DENIED,
+			resource: Resource{
+				Resource: "res:::resource_2",
+				Action:   "act:::resource_2:action_1",
+				Properties: Property{
+					String: map[string]string{
+						"prop:::resource_2:prop_1": "hello",
+					},
+					Float: map[string]float64{
+						"prop:::resource_2:prop_3": 1.1,
+					},
+					Boolean: map[string]bool{
+						"prop:::resource_2:prop_4": false,
+					},
+				},
+			},
+		},
+		{
+			name:     "[full conditions] no matched statement, expect DENIED",
+			file:     "test_data/is_access_allowed/1policy_full_conditions.json",
+			expected: DENIED,
+			resource: Resource{
+				Resource: "res:::resource_3",
+				Action:   "act:::resource_3:action_1",
+			},
+		},
+		{
+			name:     "[partial conditions] matched Allow statement, expect ALLOWED",
+			file:     "test_data/is_access_allowed/1policy_partial_conditions.json",
+			expected: ALLOWED,
+			resource: Resource{
+				Resource: "res:::resource_1",
+				Action:   "act:::resource_1:action_1",
+				Properties: Property{
+					String: map[string]string{
+						"prop:::resource_1:prop_1": "hello",
+					},
+				},
+			},
+		},
+		{
+			name:     "[partial conditions] matched Deny statement, expect DENIED",
+			file:     "test_data/is_access_allowed/1policy_partial_conditions.json",
+			expected: DENIED,
+			resource: Resource{
+				Resource: "res:::resource_2",
+				Action:   "act:::resource_2:action_1",
+				Properties: Property{
+					Float: map[string]float64{
+						"prop:::resource_2:prop_3": 1.1,
+					},
+					Boolean: map[string]bool{
+						"prop:::resource_2:prop_4": false,
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		// Arrange
+		b, _ := os.ReadFile(test.file)
+		p, _ := ParsePolicyArray(b)
+		ctrl := ValidationController{
+			Policies: p,
+		}
+
+		// Act
+		result, err := ctrl.IsAccessAllowed(test.resource)
+
+		// Assert
+		if err != nil {
+			t.Errorf("err: '%v', but want nil", err)
+		}
+		if result != test.expected {
+			t.Errorf("got %v, but want %v", result, test.expected)
+		}
+	} // end for
+}
+
 func TestIsMatchedComparator_String(t *testing.T) {
 	ctrl := ValidationController{}
 	valueRefKey := "key"
@@ -724,7 +836,6 @@ func TestIsMatchedComparator_Bool(t *testing.T) {
 	}
 }
 
-// Todo: implementing
 func TestIsMatchedComparator_UserProp(t *testing.T) {
 	t.Run("matched", func(t *testing.T) {
 		// Arrange
