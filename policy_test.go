@@ -429,6 +429,35 @@ func TestIsAccessAllowed(t *testing.T) {
 
 }
 
+func TestIsAccessAllowed_UseValidatorOverrideWithoutAnyData(t *testing.T) {
+	// Arrange
+	b := []byte{}
+	p, err := ParsePolicyArray(b)
+	if err != nil {
+		t.Error(err)
+	}
+	ctrl := ValidationController{
+		Policies:           p,
+		UserPropertyGetter: nil,
+		ValidationOverrider: &MockValidationOverrider{
+			Result: ALLOWED,
+			Error:  nil,
+		},
+	}
+
+	// Act
+	result, err := ctrl.IsAccessAllowed(Resource{})
+
+	// Assert
+	if result != ALLOWED {
+		t.Errorf("want ALLOWED, but got %v", result)
+	}
+	if err != nil {
+		t.Errorf("want nil, but got %v", err)
+	}
+
+}
+
 func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
 	tests := []struct {
 		name     string
