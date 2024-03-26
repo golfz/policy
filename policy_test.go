@@ -19,6 +19,17 @@ func (mock *MockUserGetter) GetUserProperty(key string) string {
 	return mock.UserValue[key]
 }
 
+type MockValidationOverrider struct {
+	Result    ResultEffect
+	Error     error
+	WasCalled bool
+}
+
+func (mock *MockValidationOverrider) OverridePolicyValidation(policies []Policy, UserPropertyGetter UserPropertyGetter, res Resource) (ResultEffect, error) {
+	mock.WasCalled = true
+	return mock.Result, mock.Error
+}
+
 func TestIsAccessAllowed(t *testing.T) {
 	t.Run("ValidationController with Error, expect error", func(t *testing.T) {
 		// Arrange
@@ -562,6 +573,49 @@ func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
 			t.Errorf("got %v, but want %v", result, test.expected)
 		}
 	} // end for
+}
+
+func TestIsAccessAllowed_NoSetupValidationController(t *testing.T) {
+	// Arrange
+	ctrl := ValidationController{}
+	var expectedResult = DENIED
+
+	// Act
+	result, err := ctrl.IsAccessAllowed(Resource{})
+
+	// Assert
+	if result != expectedResult {
+		t.Errorf("got %v, but want %v", result, expectedResult)
+	}
+	if err != nil {
+		t.Errorf("got %v, but want %v", err, nil)
+	}
+}
+
+func TestIsAccessAllowed_ValidationOverrider(t *testing.T) {
+	// Arrange
+	var expectedResult = ALLOWED
+	mock := MockValidationOverrider{
+		Result: expectedResult,
+		Error:  nil,
+	}
+	ctrl := ValidationController{
+		ValidationOverrider: &mock,
+	}
+
+	// Act
+	result, err := ctrl.IsAccessAllowed(Resource{})
+
+	// Assert
+	if result != expectedResult {
+		t.Errorf("got %v, but want %v", result, expectedResult)
+	}
+	if err != nil {
+		t.Errorf("got %v, but want %v", err, nil)
+	}
+	if !mock.WasCalled {
+		t.Error("mock function was not called, expect called")
+	}
 }
 
 func TestIsMatchedComparator_String(t *testing.T) {

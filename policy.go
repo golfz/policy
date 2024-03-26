@@ -85,6 +85,10 @@ type UserPropertyGetter interface {
 	GetUserProperty(key string) string
 }
 
+type ValidationOverrider interface {
+	OverridePolicyValidation(policies []Policy, UserPropertyGetter UserPropertyGetter, res Resource) (ResultEffect, error)
+}
+
 type Validator interface {
 	IsAccessAllowed(res Resource) (ResultEffect, error)
 }
@@ -94,15 +98,21 @@ type Validator interface {
 // ----------------------------------------------
 
 type ValidationController struct {
-	Policies           []Policy
-	UserPropertyGetter UserPropertyGetter
-	Err                error
+	Policies            []Policy
+	UserPropertyGetter  UserPropertyGetter
+	ValidationOverrider ValidationOverrider
+	Err                 error
 }
 
 // IsAccessAllowed checks if the user is allowed to perform the action on the resource.
 func (ctrl *ValidationController) IsAccessAllowed(res Resource) (ResultEffect, error) {
 	if ctrl.Err != nil {
 		return DENIED, ctrl.Err
+	}
+
+	// If there is a validation overrider, use it to determine the result.
+	if ctrl.ValidationOverrider != nil {
+		return ctrl.ValidationOverrider.OverridePolicyValidation(ctrl.Policies, ctrl.UserPropertyGetter, res)
 	}
 
 	var err error
