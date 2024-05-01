@@ -217,45 +217,76 @@ func (ctrl *ValidationController) countMatchedConditions(conditions map[string]C
 }
 
 func (ctrl *ValidationController) isMatchedComparator(comparator Comparator, prop Property, valueRefKey string) bool {
-	if comparator.StringIn != nil {
-		if !isContainsInList(*comparator.StringIn, prop.String[valueRefKey]) {
-			return false
-		}
+	if !ctrl.isMatchedStringComparator(comparator, prop.String[valueRefKey]) {
+		return false
 	}
-	if comparator.StringEqual != nil {
-		if !isEquals(*comparator.StringEqual, prop.String[valueRefKey]) {
-			return false
-		}
+
+	if !ctrl.isMatchedIntComparator(comparator, prop.Integer[valueRefKey]) {
+		return false
 	}
-	if comparator.IntegerIn != nil {
-		if !isContainsInList(*comparator.IntegerIn, prop.Integer[valueRefKey]) {
-			return false
-		}
+
+	if !ctrl.isMatchedFloatComparator(comparator, prop.Float[valueRefKey]) {
+		return false
 	}
-	if comparator.IntegerEqual != nil {
-		if !isEquals(*comparator.IntegerEqual, prop.Integer[valueRefKey]) {
-			return false
-		}
+
+	if !ctrl.isMatchedBoolComparator(comparator, prop.Boolean[valueRefKey]) {
+		return false
 	}
-	if comparator.FloatIn != nil {
-		if !isContainsInList(*comparator.FloatIn, prop.Float[valueRefKey]) {
-			return false
-		}
+
+	if !ctrl.isMatchedUserPropComparator(comparator, prop.String[valueRefKey]) {
+		return false
 	}
-	if comparator.FloatEqual != nil {
-		if !isEquals(*comparator.FloatEqual, prop.Float[valueRefKey]) {
-			return false
-		}
+
+	return true
+}
+
+func (ctrl *ValidationController) isMatchedStringComparator(comparator Comparator, value string) bool {
+	if comparator.StringIn != nil && !isContainsInList(*comparator.StringIn, value) {
+		return false
 	}
-	if comparator.BooleanEqual != nil {
-		if !isEquals(*comparator.BooleanEqual, prop.Boolean[valueRefKey]) {
-			return false
-		}
+
+	if comparator.StringEqual != nil && !isEquals(*comparator.StringEqual, value) {
+		return false
 	}
-	if comparator.UserPropEqual != nil {
-		if ctrl.UserPropertyGetter.GetUserProperty(*comparator.UserPropEqual) != prop.String[valueRefKey] {
-			return false
-		}
+
+	return true
+}
+
+func (ctrl *ValidationController) isMatchedIntComparator(comparator Comparator, value int) bool {
+	if comparator.IntegerIn != nil && !isContainsInList(*comparator.IntegerIn, value) {
+		return false
+	}
+
+	if comparator.IntegerEqual != nil && !isEquals(*comparator.IntegerEqual, value) {
+		return false
+	}
+
+	return true
+}
+
+func (ctrl *ValidationController) isMatchedFloatComparator(comparator Comparator, value float64) bool {
+	if comparator.FloatIn != nil && !isContainsInList(*comparator.FloatIn, value) {
+		return false
+	}
+
+	if comparator.FloatEqual != nil && !isEquals(*comparator.FloatEqual, value) {
+		return false
+	}
+
+	return true
+}
+
+func (ctrl *ValidationController) isMatchedBoolComparator(comparator Comparator, value bool) bool {
+	if comparator.BooleanEqual != nil && !isEquals(*comparator.BooleanEqual, value) {
+		return false
+	}
+
+	return true
+}
+
+func (ctrl *ValidationController) isMatchedUserPropComparator(comparator Comparator, value string) bool {
+	if comparator.UserPropEqual != nil && ctrl.UserPropertyGetter.GetUserProperty(*comparator.UserPropEqual) != value {
+		return false
 	}
 
 	return true
