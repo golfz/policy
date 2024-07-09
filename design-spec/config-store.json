@@ -1,0 +1,22 @@
+{
+    "delegate-policy-code-1": {
+        "url": [
+            "https://api.example.com/api/v1/report/rep100",
+            "https://api.example.com/api/v1/report/rep101"
+        ],
+        "from": {
+            "resource": "res:::report:rep101",
+            "actions": [
+                "act:::report:rep101:read",
+                "act:::report:rep101:download"
+            ]
+        },
+        "to": {
+            "resource": "res:::employee",
+            "actions": [
+                "act:::employee:list",
+                "act:::employee:get"
+            ]
+        }
+    }
+}
