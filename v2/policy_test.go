@@ -20,12 +20,12 @@ func (mock *MockUserGetter) GetUserProperty(key string) string {
 }
 
 type MockValidationOverrider struct {
-	Result    ResultEffect
+	Result    bool
 	Error     error
 	WasCalled bool
 }
 
-func (mock *MockValidationOverrider) OverridePolicyValidation(policies []Policy, UserPropertyGetter UserPropertyGetter, res Resource) (ResultEffect, error) {
+func (mock *MockValidationOverrider) OverridePolicyValidation(policies []Policy, UserPropertyGetter UserPropertyGetter, res Resource) (bool, error) {
 	mock.WasCalled = true
 	return mock.Result, mock.Error
 }
@@ -36,7 +36,7 @@ func TestIsAccessAllowed(t *testing.T) {
 		ctrl := ValidationController{Err: errors.New("error")}
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(Resource{})
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if result != DENIED {
@@ -60,7 +60,7 @@ func TestIsAccessAllowed(t *testing.T) {
 		}
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(Resource{})
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if result != DENIED {
@@ -85,13 +85,11 @@ func TestIsAccessAllowed(t *testing.T) {
 				},
 			},
 		}
-		res := Resource{
-			Resource: "resource2",
-		}
+		ctrl.SetResource("resource2")
 		want := DENIED
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(res)
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if result != want {
@@ -117,14 +115,12 @@ func TestIsAccessAllowed(t *testing.T) {
 				},
 			},
 		}
-		res := Resource{
-			Resource: "resource1",
-			Action:   "action3",
-		}
+		ctrl.SetResource("resource1")
+		ctrl.SetAction("action3")
 		want := DENIED
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(res)
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if result != want {
@@ -150,14 +146,12 @@ func TestIsAccessAllowed(t *testing.T) {
 				},
 			},
 		}
-		res := Resource{
-			Resource: "resource1",
-			Action:   "action2",
-		}
+		ctrl.SetResource("resource1")
+		ctrl.SetAction("action2")
 		want := ALLOWED
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(res)
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if result != want {
@@ -196,13 +190,11 @@ func TestIsAccessAllowed(t *testing.T) {
 				},
 			},
 		}
-		res := Resource{
-			Resource: "resource3",
-			Action:   "action3",
-		}
+		ctrl.SetResource("resource3")
+		ctrl.SetAction("action3")
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(res)
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if err != nil {
@@ -238,18 +230,12 @@ func TestIsAccessAllowed(t *testing.T) {
 				},
 			},
 		}
-		res := Resource{
-			Resource: "resource1",
-			Action:   "action1",
-			Properties: Property{
-				String: map[string]string{
-					propKey: propVal + "!!!!",
-				},
-			},
-		}
+		ctrl.SetResource("resource1")
+		ctrl.SetAction("action1")
+		ctrl.AddPropertyString(propKey, propVal+"!!!!")
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(res)
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if err != nil {
@@ -287,18 +273,12 @@ func TestIsAccessAllowed(t *testing.T) {
 				},
 			},
 		}
-		res := Resource{
-			Resource: "resource1",
-			Action:   "action1",
-			Properties: Property{
-				String: map[string]string{
-					propKey: propVal + "!!!!",
-				},
-			},
-		}
+		ctrl.SetResource("resource1")
+		ctrl.SetAction("action1")
+		ctrl.AddPropertyString(propKey, propVal+"!!!!")
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(res)
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if err != nil {
@@ -346,18 +326,12 @@ func TestIsAccessAllowed(t *testing.T) {
 				},
 			},
 		}
-		res := Resource{
-			Resource: "resource1",
-			Action:   "action1",
-			Properties: Property{
-				String: map[string]string{
-					propKey: propVal,
-				},
-			},
-		}
+		ctrl.SetResource("resource1")
+		ctrl.SetAction("action1")
+		ctrl.AddPropertyString(propKey, propVal)
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(res)
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if err != nil {
@@ -405,18 +379,12 @@ func TestIsAccessAllowed(t *testing.T) {
 				},
 			},
 		}
-		res := Resource{
-			Resource: "resource1",
-			Action:   "action1",
-			Properties: Property{
-				String: map[string]string{
-					propKey: propVal,
-				},
-			},
-		}
+		ctrl.SetResource("resource1")
+		ctrl.SetAction("action1")
+		ctrl.AddPropertyString(propKey, propVal)
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(res)
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if err != nil {
@@ -446,7 +414,7 @@ func TestIsAccessAllowed_UseValidatorOverrideWithoutAnyData(t *testing.T) {
 	}
 
 	// Act
-	result, err := ctrl.IsAccessAllowed(Resource{})
+	result, err := ctrl.IsAccessAllowed()
 
 	// Assert
 	if result != ALLOWED {
@@ -463,7 +431,7 @@ func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
 		name     string
 		file     string
 		resource Resource
-		expected ResultEffect
+		expected bool
 	}{
 		{
 			name:     "[full conditions] matched Allow statement, expect ALLOWED",
@@ -590,9 +558,23 @@ func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
 		ctrl := ValidationController{
 			Policies: p,
 		}
+		ctrl.SetResource(test.resource.Resource)
+		ctrl.SetAction(test.resource.Action)
+		for key, val := range test.resource.Properties.String {
+			ctrl.AddPropertyString(key, val)
+		}
+		for key, val := range test.resource.Properties.Integer {
+			ctrl.AddPropertyInteger(key, val)
+		}
+		for key, val := range test.resource.Properties.Float {
+			ctrl.AddPropertyFloat(key, val)
+		}
+		for key, val := range test.resource.Properties.Boolean {
+			ctrl.AddPropertyBoolean(key, val)
+		}
 
 		// Act
-		result, err := ctrl.IsAccessAllowed(test.resource)
+		result, err := ctrl.IsAccessAllowed()
 
 		// Assert
 		if err != nil {
@@ -610,7 +592,7 @@ func TestIsAccessAllowed_NoSetupValidationController(t *testing.T) {
 	var expectedResult = DENIED
 
 	// Act
-	result, err := ctrl.IsAccessAllowed(Resource{})
+	result, err := ctrl.IsAccessAllowed()
 
 	// Assert
 	if result != expectedResult {
@@ -633,7 +615,7 @@ func TestIsAccessAllowed_ValidationOverrider(t *testing.T) {
 	}
 
 	// Act
-	result, err := ctrl.IsAccessAllowed(Resource{})
+	result, err := ctrl.IsAccessAllowed()
 
 	// Assert
 	if result != expectedResult {
