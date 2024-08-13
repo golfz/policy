@@ -115,6 +115,10 @@ func (ctrl *ValidationController) SetAction(action string) {
 	ctrl.resource.Action = action
 }
 
+func (ctrl *ValidationController) SetError(err error) {
+	ctrl.Err = err
+}
+
 func (ctrl *ValidationController) AddPropertyString(key string, value string) {
 	if ctrl.resource.Properties.String == nil {
 		ctrl.resource.Properties.String = make(map[string]string)
