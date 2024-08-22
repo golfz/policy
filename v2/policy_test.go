@@ -397,6 +397,95 @@ func TestIsAccessAllowed(t *testing.T) {
 
 }
 
+func TestSetValidationFunction(t *testing.T) {
+	// Arrange
+	p := policyValidator{}
+	testcases := []struct {
+		name string
+		b    bool
+		err  error
+	}{
+		{
+			name: "fn1",
+			b:    true,
+			err:  nil,
+		},
+		{
+			name: "fn2",
+			b:    false,
+			err:  nil,
+		},
+		{
+			name: "fn3",
+			b:    false,
+			err:  errors.New("error"),
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			// Act
+			fn := func(a, b string) (bool, error) {
+				return tt.b, tt.err
+			}
+			p.SetValidationFunction(tt.name, fn)
+
+			// Assert
+			gotFn, ok := p.validationFunctions[tt.name]
+			if !ok {
+				t.Errorf("want true, but got false")
+			}
+			if r, err := gotFn("", ""); r != tt.b {
+				t.Errorf("want %v, but got %v", tt.b, r)
+			} else if err != tt.err {
+				t.Errorf("want %v, but got %v", tt.err, err)
+			}
+		})
+	}
+}
+
+func TestGetValidationFunction(t *testing.T) {
+	// Arrange
+	p := policyValidator{}
+	p.validationFunctions = make(map[string]ValidationFunction)
+	testcases := []struct {
+		name string
+		b    bool
+		err  error
+	}{
+		{
+			name: "fn1",
+			b:    true,
+			err:  nil,
+		},
+		{
+			name: "fn2",
+			b:    false,
+			err:  nil,
+		},
+	}
+
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			fn := func(a, b string) (bool, error) {
+				return tt.b, tt.err
+			}
+			p.validationFunctions[tt.name] = fn
+
+			// Act
+			gotFn := p.getValidationFunction(tt.name)
+
+			// Assert
+			if b, err := gotFn("", ""); b != tt.b {
+				t.Errorf("want %v, but got %v", tt.b, b)
+			} else if err != tt.err {
+				t.Errorf("want %v, but got %v", tt.err, err)
+			}
+		})
+	}
+}
+
 func TestIsAccessAllowed_UseValidatorOverrideWithoutAnyData(t *testing.T) {
 	// Arrange
 	b := []byte{}
