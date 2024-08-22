@@ -82,6 +82,22 @@ func TestParsePolicy_NoCondition(t *testing.T) {
 
 }
 
+func TestParsePolicy_ValidationFunc(t *testing.T) {
+	// Arrange
+	b, err := os.ReadFile("test_data/parse_policy/policy_ValidationFunc.json")
+	if err != nil {
+		t.Error(err)
+	}
+
+	// Act
+	_, err = ParsePolicy(b)
+
+	// Assert
+	if err != nil {
+		t.Errorf("Expected nil, but got %s", err)
+	}
+}
+
 // ----------------------------------------------
 // PolicyArray
 // ----------------------------------------------

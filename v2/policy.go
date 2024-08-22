@@ -44,17 +44,24 @@ type Condition struct {
 }
 
 type Comparator struct {
-	StringIn      *[]string
-	StringEqual   *string
-	IntegerIn     *[]int
-	IntegerEqual  *int
-	FloatIn       *[]float64
-	FloatEqual    *float64
-	BooleanEqual  *bool
-	UserPropEqual *string
+	StringIn       *[]string
+	StringEqual    *string
+	IntegerIn      *[]int
+	IntegerEqual   *int
+	FloatIn        *[]float64
+	FloatEqual     *float64
+	BooleanEqual   *bool
+	UserPropEqual  *string
+	ValidationFunc *ValidationFunc
 	//TimeRange     map[string]TimeRange
 	//DateRange     map[string]TimeRange
 	//DateTimeRange map[string]TimeRange
+}
+
+type ValidationFunc struct {
+	Function string
+	PropArg  *string
+	UserArg  *string
 }
 
 //type TimeRange struct {
