@@ -486,6 +486,27 @@ func TestGetValidationFunction(t *testing.T) {
 	}
 }
 
+func TestGetValidationFunction_NoExpectedFunctionShouldReturnNil(t *testing.T) {
+	// Arrange
+	p := policyValidator{}
+	fn1 := func(a, b string) (bool, error) {
+		return true, nil
+	}
+	p.SetValidationFunction("fn1", fn1)
+
+	// Act
+	gotFn1 := p.getValidationFunction("fn1")
+	gotFn2 := p.getValidationFunction("fn2")
+
+	// Assert
+	if gotFn1 == nil {
+		t.Errorf("want not nil, but got nil")
+	}
+	if gotFn2 != nil {
+		t.Errorf("want nil, but got unexpected function")
+	}
+}
+
 func TestIsAccessAllowed_UseValidatorOverrideWithoutAnyData(t *testing.T) {
 	// Arrange
 	b := []byte{}
