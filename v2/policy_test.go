@@ -31,9 +31,9 @@ func (mock *MockValidationOverrider) OverridePolicyValidation(policies []Policy,
 }
 
 func TestIsAccessAllowed(t *testing.T) {
-	t.Run("PolicyValidator with Error, expect error", func(t *testing.T) {
+	t.Run("policyValidator with Error, expect error", func(t *testing.T) {
 		// Arrange
-		ctrl := PolicyValidator{Err: errors.New("error")}
+		ctrl := policyValidator{Err: errors.New("error")}
 
 		// Act
 		result, err := ctrl.IsAccessAllowed()
@@ -47,9 +47,9 @@ func TestIsAccessAllowed(t *testing.T) {
 		}
 	})
 
-	t.Run("PolicyValidator with invalid effect, expect error", func(t *testing.T) {
+	t.Run("policyValidator with invalid effect, expect error", func(t *testing.T) {
 		// Arrange
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: []Policy{
 				{
 					Statements: []Statement{
@@ -73,7 +73,7 @@ func TestIsAccessAllowed(t *testing.T) {
 
 	t.Run("no matching resource, expect DENIED", func(t *testing.T) {
 		// Arrange
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: []Policy{
 				{
 					Statements: []Statement{
@@ -102,7 +102,7 @@ func TestIsAccessAllowed(t *testing.T) {
 
 	t.Run("no matching Action, expect DENIED", func(t *testing.T) {
 		// Arrange
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: []Policy{
 				{
 					Statements: []Statement{
@@ -133,7 +133,7 @@ func TestIsAccessAllowed(t *testing.T) {
 
 	t.Run("matching Resource and Action, expect ALLOWED", func(t *testing.T) {
 		// Arrange
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: []Policy{
 				{
 					Statements: []Statement{
@@ -164,7 +164,7 @@ func TestIsAccessAllowed(t *testing.T) {
 
 	t.Run("Rule 1 no matched statements (Resource and Action not matched), expect DENIED", func(t *testing.T) {
 		// Arrange
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: []Policy{
 				{
 					PolicyID: "policy-A",
@@ -209,7 +209,7 @@ func TestIsAccessAllowed(t *testing.T) {
 		// Arrange
 		propKey := "key"
 		propVal := "value"
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: []Policy{
 				{
 					PolicyID: "policy-A",
@@ -251,7 +251,7 @@ func TestIsAccessAllowed(t *testing.T) {
 		propKey := "key"
 		propVal := "value"
 		list := []string{"hello", "world"}
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: []Policy{
 				{
 					PolicyID: "policy-A",
@@ -293,7 +293,7 @@ func TestIsAccessAllowed(t *testing.T) {
 		// Arrange
 		propKey := "key"
 		propVal := "value"
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: []Policy{
 				{
 					PolicyID: "policy-A",
@@ -346,7 +346,7 @@ func TestIsAccessAllowed(t *testing.T) {
 		// Arrange
 		propKey := "key"
 		propVal := "value"
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: []Policy{
 				{
 					PolicyID: "policy-A",
@@ -404,7 +404,7 @@ func TestIsAccessAllowed_UseValidatorOverrideWithoutAnyData(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	ctrl := PolicyValidator{
+	ctrl := policyValidator{
 		Policies:           p,
 		UserPropertyGetter: nil,
 		ValidationOverrider: &MockValidationOverrider{
@@ -555,7 +555,7 @@ func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
 		// Arrange
 		b, _ := os.ReadFile(test.file)
 		p, _ := ParsePolicyArray(b)
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			Policies: p,
 		}
 		ctrl.SetResource(test.resource.Resource)
@@ -588,7 +588,7 @@ func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
 
 func TestIsAccessAllowed_NoSetupValidationController(t *testing.T) {
 	// Arrange
-	ctrl := PolicyValidator{}
+	ctrl := policyValidator{}
 	var expectedResult = DENIED
 
 	// Act
@@ -610,7 +610,7 @@ func TestIsAccessAllowed_ValidationOverrider(t *testing.T) {
 		Result: expectedResult,
 		Error:  nil,
 	}
-	ctrl := PolicyValidator{
+	ctrl := policyValidator{
 		ValidationOverrider: &mock,
 	}
 
@@ -630,7 +630,7 @@ func TestIsAccessAllowed_ValidationOverrider(t *testing.T) {
 }
 
 func TestIsMatchedComparator_String(t *testing.T) {
-	ctrl := PolicyValidator{}
+	ctrl := policyValidator{}
 	valueRefKey := "key"
 	testCases := []struct {
 		name                string
@@ -718,7 +718,7 @@ func TestIsMatchedComparator_String(t *testing.T) {
 }
 
 func TestIsMatchedComparator_Integer(t *testing.T) {
-	ctrl := PolicyValidator{}
+	ctrl := policyValidator{}
 	valueRefKey := "key"
 	testCases := []struct {
 		name                 string
@@ -806,7 +806,7 @@ func TestIsMatchedComparator_Integer(t *testing.T) {
 }
 
 func TestIsMatchedComparator_Float(t *testing.T) {
-	ctrl := PolicyValidator{}
+	ctrl := policyValidator{}
 	valueRefKey := "key"
 	testCases := []struct {
 		name               string
@@ -894,7 +894,7 @@ func TestIsMatchedComparator_Float(t *testing.T) {
 }
 
 func TestIsMatchedComparator_Bool(t *testing.T) {
-	ctrl := PolicyValidator{}
+	ctrl := policyValidator{}
 	valueRefKey := "key"
 	testCases := []struct {
 		name                 string
@@ -949,7 +949,7 @@ func TestIsMatchedComparator_UserProp(t *testing.T) {
 				"user-key2": "value2",
 			},
 		}
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			UserPropertyGetter: &mock,
 		}
 		comparator := Comparator{
@@ -986,7 +986,7 @@ func TestIsMatchedComparator_UserProp(t *testing.T) {
 				"user-key2": "value2222",
 			},
 		}
-		ctrl := PolicyValidator{
+		ctrl := policyValidator{
 			UserPropertyGetter: &mock,
 		}
 		comparator := Comparator{
