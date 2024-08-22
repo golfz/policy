@@ -17,9 +17,13 @@ const (
 	ALLOWED = true
 )
 
-// ----------------------------------------------
-// Policy struct
-// ----------------------------------------------
+type UserPropertyGetter interface {
+	GetUserProperty(key string) string
+}
+
+type ValidationOverrider interface {
+	OverridePolicyValidation(policies []Policy, UserPropertyGetter UserPropertyGetter, res Resource) (bool, error)
+}
 
 type Policy struct {
 	Version    int
@@ -58,9 +62,13 @@ type Comparator struct {
 //	To   string
 //}
 
-// ----------------------------------------------
-// Resource struct
-// ----------------------------------------------
+type PolicyValidator struct {
+	resource            Resource
+	Policies            []Policy
+	UserPropertyGetter  UserPropertyGetter
+	ValidationOverrider ValidationOverrider
+	Err                 error
+}
 
 type Resource struct {
 	Resource   string
@@ -75,96 +83,72 @@ type Property struct {
 	Boolean map[string]bool
 }
 
-// ----------------------------------------------
-// interface
-// ----------------------------------------------
-
-type UserPropertyGetter interface {
-	GetUserProperty(key string) string
-}
-
-type ValidationOverrider interface {
-	OverridePolicyValidation(policies []Policy, UserPropertyGetter UserPropertyGetter, res Resource) (bool, error)
-}
-
-// ----------------------------------------------
-// ValidationController
-// ----------------------------------------------
-
-type ValidationController struct {
-	resource            Resource
-	Policies            []Policy
-	UserPropertyGetter  UserPropertyGetter
-	ValidationOverrider ValidationOverrider
-	Err                 error
-}
-
-func New() *ValidationController {
-	return &ValidationController{
+func New() *PolicyValidator {
+	return &PolicyValidator{
 		resource: Resource{
 			Properties: Property{},
 		},
 	}
 }
 
-func (ctrl *ValidationController) SetResource(resource string) {
-	ctrl.resource.Resource = resource
+func (pv *PolicyValidator) SetResource(resource string) {
+	pv.resource.Resource = resource
 }
 
-func (ctrl *ValidationController) SetAction(action string) {
-	ctrl.resource.Action = action
+func (pv *PolicyValidator) SetAction(action string) {
+	pv.resource.Action = action
 }
 
-func (ctrl *ValidationController) SetError(err error) {
-	ctrl.Err = err
+func (pv *PolicyValidator) SetError(err error) {
+	pv.Err = err
 }
 
-func (ctrl *ValidationController) AddPropertyString(key string, value string) {
-	if ctrl.resource.Properties.String == nil {
-		ctrl.resource.Properties.String = make(map[string]string)
+func (pv *PolicyValidator) AddPropertyString(key string, value string) {
+	if pv.resource.Properties.String == nil {
+		pv.resource.Properties.String = make(map[string]string)
 	}
-	ctrl.resource.Properties.String[key] = value
+	pv.resource.Properties.String[key] = value
 }
 
-func (ctrl *ValidationController) AddPropertyInteger(key string, value int) {
-	if ctrl.resource.Properties.Integer == nil {
-		ctrl.resource.Properties.Integer = make(map[string]int)
+func (pv *PolicyValidator) AddPropertyInteger(key string, value int) {
+	if pv.resource.Properties.Integer == nil {
+		pv.resource.Properties.Integer = make(map[string]int)
 	}
-	ctrl.resource.Properties.Integer[key] = value
+	pv.resource.Properties.Integer[key] = value
 }
 
-func (ctrl *ValidationController) AddPropertyFloat(key string, value float64) {
-	if ctrl.resource.Properties.Float == nil {
-		ctrl.resource.Properties.Float = make(map[string]float64)
+func (pv *PolicyValidator) AddPropertyFloat(key string, value float64) {
+	if pv.resource.Properties.Float == nil {
+		pv.resource.Properties.Float = make(map[string]float64)
 	}
-	ctrl.resource.Properties.Float[key] = value
+	pv.resource.Properties.Float[key] = value
 }
 
-func (ctrl *ValidationController) AddPropertyBoolean(key string, value bool) {
-	if ctrl.resource.Properties.Boolean == nil {
-		ctrl.resource.Properties.Boolean = make(map[string]bool)
+func (pv *PolicyValidator) AddPropertyBoolean(key string, value bool) {
+	if pv.resource.Properties.Boolean == nil {
+		pv.resource.Properties.Boolean = make(map[string]bool)
 	}
-	ctrl.resource.Properties.Boolean[key] = value
+	pv.resource.Properties.Boolean[key] = value
 }
 
 // IsAccessAllowed checks if the user is allowed to perform the action on the resource.
-func (ctrl *ValidationController) IsAccessAllowed() (bool, error) {
-	if ctrl.Err != nil {
-		return DENIED, ctrl.Err
+func (pv *PolicyValidator) IsAccessAllowed() (bool, error) {
+	if pv.Err != nil {
+		return DENIED, pv.Err
 	}
 
 	// If there is a validation overrider, use it to determine the result.
-	if ctrl.ValidationOverrider != nil {
-		return ctrl.ValidationOverrider.OverridePolicyValidation(ctrl.Policies, ctrl.UserPropertyGetter, ctrl.resource)
+	if pv.ValidationOverrider != nil {
+		return pv.ValidationOverrider.OverridePolicyValidation(pv.Policies, pv.UserPropertyGetter, pv.resource)
 	}
 
 	var err error
-	statements := getMergedStatements(ctrl.Policies)
-	if err = ctrl.validateStatements(statements); err != nil {
+	statements := getMergedStatements(pv.Policies)
+	if err = pv.validateStatements(statements); err != nil {
 		return DENIED, err
 	}
-	statements = ctrl.filterWithResourceAndAction(statements, ctrl.resource)
-	statements = ctrl.filterWithStatementConditions(statements, ctrl.resource)
+	statements = pv.filterWithResourceAndAction(statements, pv.resource)
+	statements = pv.filterWithStatementConditions(statements, pv.resource)
 
 	// Rule 1: If there are no matching statements, then the result is "DENIED".
 	if len(statements) == 0 {
@@ -184,7 +168,7 @@ func (ctrl *ValidationController) IsAccessAllowed() (bool, error) {
 
 // validateStatements function checks if the effect of each statement is valid.
 // If the effect is not 'Allow' or 'Deny', it returns an error.
-func (ctrl *ValidationController) validateStatements(statements []Statement) error {
+func (pv *PolicyValidator) validateStatements(statements []Statement) error {
 	for _, stmt := range statements {
 		if !isValidEffect(stmt.Effect) {
 			return fmt.Errorf("invalid effect: %s", stmt.Effect)
@@ -193,7 +177,7 @@ func (ctrl *ValidationController) validateStatements(statements []Statement) err
 	return nil
 }
 
-func (ctrl *ValidationController) filterWithResourceAndAction(statements []Statement, res Resource) []Statement {
+func (pv *PolicyValidator) filterWithResourceAndAction(statements []Statement, res Resource) []Statement {
 	var filteredStatements []Statement
 	for _, stmt := range statements {
 		if stmt.Resource == res.Resource && isContainsInList(stmt.Actions, res.Action) {
@@ -203,7 +187,7 @@ func (ctrl *ValidationController) filterWithResourceAndAction(statements []State
 	return filteredStatements
 }
 
-func (ctrl *ValidationController) filterWithStatementConditions(statements []Statement, res Resource) []Statement {
+func (pv *PolicyValidator) filterWithStatementConditions(statements []Statement, res Resource) []Statement {
 	var filteredStatements []Statement
 	for _, stmt := range statements {
 		// Rule 4: If there are no conditions, then the statement is considered matched.
@@ -212,7 +196,7 @@ func (ctrl *ValidationController) filterWithStatementConditions(statements []Sta
 			continue
 		}
 
-		isMatched := ctrl.considerStatementConditions(*stmt.Conditions, res)
+		isMatched := pv.considerStatementConditions(*stmt.Conditions, res)
 		if isMatched {
 			filteredStatements = append(filteredStatements, stmt)
 		}
@@ -220,15 +204,15 @@ func (ctrl *ValidationController) filterWithStatementConditions(statements []Sta
 	return filteredStatements
 }
 
-func (ctrl *ValidationController) considerStatementConditions(condition Condition, res Resource) bool {
-	isAtLeastOneConditionMatched := ctrl.considerAtLeastOneCondition(condition.AtLeastOne, res)
-	isMustHaveAllConditionMatched := ctrl.considerMustHaveAllCondition(condition.MustHaveAll, res)
+func (pv *PolicyValidator) considerStatementConditions(condition Condition, res Resource) bool {
+	isAtLeastOneConditionMatched := pv.considerAtLeastOneCondition(condition.AtLeastOne, res)
+	isMustHaveAllConditionMatched := pv.considerMustHaveAllCondition(condition.MustHaveAll, res)
 	isMatched := isAtLeastOneConditionMatched && isMustHaveAllConditionMatched
 	return isMatched
 }
 
-func (ctrl *ValidationController) considerAtLeastOneCondition(conditions map[string]Comparator, res Resource) bool {
-	matched, total := ctrl.countMatchedConditions(conditions, res)
+func (pv *PolicyValidator) considerAtLeastOneCondition(conditions map[string]Comparator, res Resource) bool {
+	matched, total := pv.countMatchedConditions(conditions, res)
 	if total == 0 {
 		return conditionMatched
 	}
@@ -238,8 +222,8 @@ func (ctrl *ValidationController) considerAtLeastOneCondition(conditions map[str
 	return conditionNotMatched
 }
 
-func (ctrl *ValidationController) considerMustHaveAllCondition(conditions map[string]Comparator, res Resource) bool {
-	matched, total := ctrl.countMatchedConditions(conditions, res)
+func (pv *PolicyValidator) considerMustHaveAllCondition(conditions map[string]Comparator, res Resource) bool {
+	matched, total := pv.countMatchedConditions(conditions, res)
 	if total == 0 {
 		return conditionMatched
 	}
@@ -249,17 +233,17 @@ func (ctrl *ValidationController) considerMustHaveAllCondition(conditions map[st
 	return conditionNotMatched
 }
 
-func (ctrl *ValidationController) countMatchedConditions(conditions map[string]Comparator, res Resource) (matched, total int) {
+func (pv *PolicyValidator) countMatchedConditions(conditions map[string]Comparator, res Resource) (matched, total int) {
 	total = len(conditions)
 	for valueRefKey, comparator := range conditions {
-		if ctrl.isMatchedComparator(comparator, res.Properties, valueRefKey) {
+		if pv.isMatchedComparator(comparator, res.Properties, valueRefKey) {
 			matched++
 		}
 	}
 	return
 }
 
-func (ctrl *ValidationController) isMatchedComparator(comparator Comparator, prop Property, valueRefKey string) bool {
+func (pv *PolicyValidator) isMatchedComparator(comparator Comparator, prop Property, valueRefKey string) bool {
 	if comparator.StringIn != nil {
 		if !isContainsInList(*comparator.StringIn, prop.String[valueRefKey]) {
 			return false
@@ -296,7 +280,7 @@ func (ctrl *ValidationController) isMatchedComparator(comparator Comparator, pro
 		}
 	}
 	if comparator.UserPropEqual != nil {
-		if ctrl.UserPropertyGetter.GetUserProperty(*comparator.UserPropEqual) != prop.String[valueRefKey] {
+		if pv.UserPropertyGetter.GetUserProperty(*comparator.UserPropEqual) != prop.String[valueRefKey] {
 			return false
 		}
 	}
@@ -308,6 +292,7 @@ func (ctrl *ValidationController) isMatchedComparator(comparator Comparator, pro
 // Helper functions
 // ----------------------------------------------
 
+// getMergedStatements will merge all statements from all policies to a single slice.
 func getMergedStatements(policies []Policy) []Statement {
 	statements := make([]Statement, 0)
 	for _, policy := range policies {
