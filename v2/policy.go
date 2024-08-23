@@ -1,6 +1,9 @@
 package policy
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 const (
 	statementEffectAllow = "Allow"
@@ -269,49 +272,78 @@ func (pv *policyValidator) countMatchedConditions(conditions map[string]Comparat
 	return
 }
 
-func (pv *policyValidator) isMatchedComparator(comparator Comparator, prop Property, valueRefKey string) bool {
+func (pv *policyValidator) isMatchedComparator(comparator Comparator, prop Property, comparisonTargetField string) bool {
 	if comparator.StringIn != nil {
-		if !isContainsInList(*comparator.StringIn, prop.String[valueRefKey]) {
+		if !isContainsInList(*comparator.StringIn, prop.String[comparisonTargetField]) {
 			return false
 		}
 	}
 	if comparator.StringEqual != nil {
-		if !isEquals(*comparator.StringEqual, prop.String[valueRefKey]) {
+		if !isEquals(*comparator.StringEqual, prop.String[comparisonTargetField]) {
 			return false
 		}
 	}
 	if comparator.IntegerIn != nil {
-		if !isContainsInList(*comparator.IntegerIn, prop.Integer[valueRefKey]) {
+		if !isContainsInList(*comparator.IntegerIn, prop.Integer[comparisonTargetField]) {
 			return false
 		}
 	}
 	if comparator.IntegerEqual != nil {
-		if !isEquals(*comparator.IntegerEqual, prop.Integer[valueRefKey]) {
+		if !isEquals(*comparator.IntegerEqual, prop.Integer[comparisonTargetField]) {
 			return false
 		}
 	}
 	if comparator.FloatIn != nil {
-		if !isContainsInList(*comparator.FloatIn, prop.Float[valueRefKey]) {
+		if !isContainsInList(*comparator.FloatIn, prop.Float[comparisonTargetField]) {
 			return false
 		}
 	}
 	if comparator.FloatEqual != nil {
-		if !isEquals(*comparator.FloatEqual, prop.Float[valueRefKey]) {
+		if !isEquals(*comparator.FloatEqual, prop.Float[comparisonTargetField]) {
 			return false
 		}
 	}
 	if comparator.BooleanEqual != nil {
-		if !isEquals(*comparator.BooleanEqual, prop.Boolean[valueRefKey]) {
+		if !isEquals(*comparator.BooleanEqual, prop.Boolean[comparisonTargetField]) {
 			return false
 		}
 	}
 	if comparator.UserPropEqual != nil {
-		if pv.UserPropertyGetter.GetUserProperty(*comparator.UserPropEqual) != prop.String[valueRefKey] {
+		if pv.UserPropertyGetter.GetUserProperty(*comparator.UserPropEqual) != prop.String[comparisonTargetField] {
 			return false
 		}
 	}
 
+	if comparator.ValidationFunc != nil {
+		fn := pv.getValidationFunction(comparator.ValidationFunc.Function)
+		if fn == nil {
+			return false
+		}
+
+		firstArg := prop.String[comparisonTargetField]
+		secondArg, err := pv.getSecondArgument(prop, comparator)
+		if err != nil {
+			return false
+		}
+
+		isMatched, err := fn(firstArg, secondArg)
+		if err != nil {
+			return false
+		}
+		return isMatched
+	}
+
 	return true
+}
+
+func (pv *policyValidator) getSecondArgument(prop Property, comparator Comparator) (string, error) {
+	if comparator.ValidationFunc.PropArg != nil {
+		return prop.String[*comparator.ValidationFunc.PropArg], nil
+	} else if comparator.ValidationFunc.UserArg != nil {
+		return pv.UserPropertyGetter.GetUserProperty(*comparator.ValidationFunc.UserArg), nil
+	} else {
+		return "", errors.New("invalid arguments")
+	}
 }
 
 // ----------------------------------------------
