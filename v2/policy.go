@@ -269,7 +269,7 @@ func (pv *policyValidator) countMatchedConditions(conditions map[string]Comparat
 			matched++
 		}
 	}
-	return
+	return matched, total
 }
 
 func (pv *policyValidator) isMatchedComparator(comparator Comparator, prop Property, comparisonTargetField string) bool {
