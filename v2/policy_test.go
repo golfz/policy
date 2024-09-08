@@ -541,21 +541,17 @@ func TestGetSecondArgumentForValidationFunc_PropArg(t *testing.T) {
 
 func TestGetSecondArgumentForValidationFunc_UserArg(t *testing.T) {
 	// Arrange
-	userData := `
-	{
-		"employee": {
-			"name": {
-				"first": "John"
-			}
-		}
-	}`
-	userKey := "user:::employee:name:first"
+	userKey := "userKey"
 	expected := "John"
 
-	userPropGetter := NewDefaultUserPropertyGetter(userData)
+	mockUserGetter := &MockUserGetter{
+		UserValue: map[string]string{
+			userKey: expected,
+		},
+	}
 
 	pValidator := New()
-	pValidator.UserPropertyGetter = userPropGetter
+	pValidator.UserPropertyGetter = mockUserGetter
 
 	prop := Property{}
 	comparator := Comparator{
@@ -573,6 +569,12 @@ func TestGetSecondArgumentForValidationFunc_UserArg(t *testing.T) {
 	}
 	if err != nil {
 		t.Errorf("got %v, but want nil", err)
+	}
+	if !mockUserGetter.WasCalled {
+		t.Error("mock function was not called, expect called")
+	}
+	if mockUserGetter.WhatIsParam != userKey {
+		t.Errorf("got %v, but want %v", mockUserGetter.WhatIsParam, userKey)
 	}
 }
 
