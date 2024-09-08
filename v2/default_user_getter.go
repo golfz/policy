@@ -3,6 +3,7 @@ package policy
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"strings"
 )
 
@@ -13,6 +14,7 @@ type defaultUserPropertyGetter struct {
 func NewDefaultUserPropertyGetter(userData string) UserPropertyGetter {
 	data, err := parseJSON(userData)
 	if err != nil {
+		log.Printf("Error parsing user data: %v", err)
 		return &defaultUserPropertyGetter{userData: make(map[string]interface{})}
 	}
 	return &defaultUserPropertyGetter{userData: data}

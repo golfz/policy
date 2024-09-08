@@ -507,13 +507,121 @@ func TestGetValidationFunction_NoExpectedFunctionShouldReturnNil(t *testing.T) {
 	}
 }
 
-// TODO: Test getSecondArgumentForValidationFunc
-func TestGetSecondArgumentForValidationFunc(t *testing.T) {
+func TestGetSecondArgumentForValidationFunc_PropArg(t *testing.T) {
 	// Arrange
+	pValidator := New()
+
+	propKey := "prop_key"
+	expected := "prop_value"
+
+	prop := Property{
+		String: map[string]string{
+			propKey: expected,
+		},
+	}
+
+	comparator := Comparator{
+		ValidationFunc: &ValidationFunc{
+			PropArg: &propKey,
+		},
+	}
 
 	// Act
+	got, err := pValidator.getSecondArgumentForValidationFunc(prop, comparator)
 
 	// Assert
+	if got != expected {
+		t.Errorf("got %v, but want %v", got, expected)
+	}
+	if err != nil {
+		t.Errorf("got %v, but want nil", err)
+	}
+
+}
+
+func TestGetSecondArgumentForValidationFunc_UserArg(t *testing.T) {
+	// Arrange
+	userData := `
+	{
+		"employee": {
+			"name": {
+				"first": "John"
+			}
+		}
+	}`
+	userKey := "user:::employee:name:first"
+	expected := "John"
+
+	userPropGetter := NewDefaultUserPropertyGetter(userData)
+
+	pValidator := New()
+	pValidator.UserPropertyGetter = userPropGetter
+
+	prop := Property{}
+	comparator := Comparator{
+		ValidationFunc: &ValidationFunc{
+			UserArg: &userKey,
+		},
+	}
+
+	// Act
+	got, err := pValidator.getSecondArgumentForValidationFunc(prop, comparator)
+
+	// Assert
+	if got != expected {
+		t.Errorf("got %v, but want %v", got, expected)
+	}
+	if err != nil {
+		t.Errorf("got %v, but want nil", err)
+	}
+}
+
+func TestGetSecondArgumentForValidationFunc_ErrHave2Args(t *testing.T) {
+	// Arrange
+	pValidator := New()
+
+	propArg := "prop_arg"
+	userArg := "user_arg"
+
+	prop := Property{}
+	comparator := Comparator{
+		ValidationFunc: &ValidationFunc{
+			PropArg: &propArg,
+			UserArg: &userArg,
+		},
+	}
+
+	// Act
+	got, err := pValidator.getSecondArgumentForValidationFunc(prop, comparator)
+
+	// Assert
+	if got != "" {
+		t.Errorf("got %v, but want empty string", got)
+	}
+	if err == nil {
+		t.Error("want error, but got nil")
+	}
+}
+
+func TestGetSecondArgumentForValidationFunc_ErrHaveNoArgs(t *testing.T) {
+	// Arrange
+	pValidator := New()
+
+	prop := Property{}
+	comparator := Comparator{
+		ValidationFunc: &ValidationFunc{}, // no args
+	}
+
+	// Act
+	got, err := pValidator.getSecondArgumentForValidationFunc(prop, comparator)
+
+	// Assert
+	if got != "" {
+		t.Errorf("got %v, but want empty string", got)
+	}
+	if err == nil {
+		t.Error("want error, but got nil")
+	}
 }
 
 func TestIsAccessAllowed_UseValidatorOverrideWithoutAnyData(t *testing.T) {

@@ -337,12 +337,17 @@ func (pv *policyValidator) isMatchedComparator(comparator Comparator, prop Prope
 }
 
 func (pv *policyValidator) getSecondArgumentForValidationFunc(prop Property, comparator Comparator) (string, error) {
-	if comparator.ValidationFunc.PropArg != nil {
+	if comparator.ValidationFunc.PropArg != nil && comparator.ValidationFunc.UserArg != nil {
+		return "", errors.New("invalid second argument for validation function, must be either prop or user")
+
+	} else if comparator.ValidationFunc.PropArg != nil {
 		return prop.String[*comparator.ValidationFunc.PropArg], nil
+
 	} else if comparator.ValidationFunc.UserArg != nil {
 		return pv.UserPropertyGetter.GetUserProperty(*comparator.ValidationFunc.UserArg), nil
+
 	} else {
-		return "", errors.New("invalid second argument for validation function, must be either prop or user")
+		return "", errors.New("invalid second argument for validation function, no argument provided")
 	}
 }
 
