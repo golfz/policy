@@ -321,7 +321,7 @@ func (pv *policyValidator) isMatchedComparator(comparator Comparator, prop Prope
 		}
 
 		firstArg := prop.String[comparisonTargetField]
-		secondArg, err := pv.getSecondArgument(prop, comparator)
+		secondArg, err := pv.getSecondArgumentForValidationFunc(prop, comparator)
 		if err != nil {
 			return false
 		}
@@ -336,13 +336,13 @@ func (pv *policyValidator) isMatchedComparator(comparator Comparator, prop Prope
 	return true
 }
 
-func (pv *policyValidator) getSecondArgument(prop Property, comparator Comparator) (string, error) {
+func (pv *policyValidator) getSecondArgumentForValidationFunc(prop Property, comparator Comparator) (string, error) {
 	if comparator.ValidationFunc.PropArg != nil {
 		return prop.String[*comparator.ValidationFunc.PropArg], nil
 	} else if comparator.ValidationFunc.UserArg != nil {
 		return pv.UserPropertyGetter.GetUserProperty(*comparator.ValidationFunc.UserArg), nil
 	} else {
-		return "", errors.New("invalid arguments")
+		return "", errors.New("invalid second argument for validation function, must be either prop or user")
 	}
 }
 

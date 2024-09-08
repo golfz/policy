@@ -507,6 +507,15 @@ func TestGetValidationFunction_NoExpectedFunctionShouldReturnNil(t *testing.T) {
 	}
 }
 
+// TODO: Test getSecondArgumentForValidationFunc
+func TestGetSecondArgumentForValidationFunc(t *testing.T) {
+	// Arrange
+
+	// Act
+
+	// Assert
+}
+
 func TestIsAccessAllowed_UseValidatorOverrideWithoutAnyData(t *testing.T) {
 	// Arrange
 	b := []byte{}
