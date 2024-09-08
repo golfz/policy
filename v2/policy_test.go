@@ -1324,3 +1324,118 @@ func TestIsValidEffect(t *testing.T) {
 		})
 	}
 }
+
+func Test_isMatchedComparator_ValidationFunc_NoMatchedFunc_ExpectFalse(t *testing.T) {
+	// Arrange
+	pValidator := New()
+	pValidator.SetValidationFunction("fn1", func(a, b string) (bool, error) {
+		return true, nil
+	})
+
+	comparator := Comparator{
+		ValidationFunc: &ValidationFunc{
+			Function: "func:::fn_unknown",
+		},
+	}
+
+	// Act
+	got := pValidator.isMatchedComparator(comparator, Property{}, "")
+
+	// Assert
+	if got != false {
+		t.Errorf("got %v, but want %v", got, false)
+	}
+}
+
+func Test_isMatchedComparator_ValidationFunc(t *testing.T) {
+	// Arrange
+	pValidator := New()
+
+	pValidator.SetValidationFunction("fn_true", func(a, b string) (bool, error) {
+		return true, nil
+	})
+	pValidator.SetValidationFunction("fn_false", func(a, b string) (bool, error) {
+		return false, nil
+	})
+	pValidator.SetValidationFunction("fn_error", func(a, b string) (bool, error) {
+		return false, errors.New("error")
+	})
+
+	userKey := "user_key"
+	mockUserGetter := &MockUserGetter{
+		UserValue: map[string]string{
+			userKey: "user_value",
+		},
+	}
+	pValidator.UserPropertyGetter = mockUserGetter
+
+	comparisonTargetField := "prop_key"
+	prop := Property{
+		String: map[string]string{
+			comparisonTargetField: "prop_value",
+		},
+	}
+
+	testCases := []struct {
+		name                  string
+		want                  bool
+		comparator            Comparator
+		prop                  Property
+		comparisonTargetField string
+	}{
+		{
+			name: "No matched ValidationFunc, expect false",
+			want: false,
+			comparator: Comparator{
+				ValidationFunc: &ValidationFunc{
+					Function: "func:::fn_unknown",
+				},
+			},
+		},
+		{
+			name: "Matched always true ValidationFunc, expect true",
+			want: true,
+			comparator: Comparator{
+				ValidationFunc: &ValidationFunc{
+					Function: "fn_true",
+					UserArg:  &userKey,
+				},
+			},
+			prop:                  prop,
+			comparisonTargetField: comparisonTargetField,
+		},
+		{
+			name: "Matched always false ValidationFunc, expect false",
+			want: false,
+			comparator: Comparator{
+				ValidationFunc: &ValidationFunc{
+					Function: "fn_false",
+					UserArg:  &userKey,
+				},
+			},
+		},
+		{
+			name: "Matched always error ValidationFunc, expect false",
+			want: false,
+			comparator: Comparator{
+				ValidationFunc: &ValidationFunc{
+					Function: "fn_error",
+					UserArg:  &userKey,
+				},
+			},
+		},
+	}
+
+	for _, tt := range testCases {
+		t.Run(tt.name, func(t *testing.T) {
+			// Act
+			got := pValidator.isMatchedComparator(tt.comparator, tt.prop, tt.comparisonTargetField)
+
+			// Assert
+			if got != tt.want {
+				t.Errorf("got %v, but want %v", got, tt.want)
+			}
+		})
+	}
+
+}
