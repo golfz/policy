@@ -1267,7 +1267,7 @@ func TestIsMatchedComparator_UserProp(t *testing.T) {
 
 }
 
-func TestGetMergedStatements(t *testing.T) {
+func TestExtractStatements(t *testing.T) {
 	tests := []struct {
 		name     string
 		policies []Policy
@@ -1309,8 +1309,8 @@ func TestGetMergedStatements(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getMergedStatements(tt.policies); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getMergedStatements() = %v, want %v", got, tt.want)
+			if got := extractStatements(tt.policies); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("extractStatements() = %v, want %v", got, tt.want)
 			}
 		})
 	}

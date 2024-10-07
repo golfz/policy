@@ -188,9 +188,13 @@ func (pv *policyValidator) IsAccessAllowed() (bool, error) {
 		return pv.ValidationOverrider.OverridePolicyValidation(pv.Policies, pv.UserPropertyGetter, pv.resource)
 	}
 
+	return pv.validateStatements(extractStatements(pv.Policies))
+}
+
+func (pv *policyValidator) validateStatements(statements []Statement) (bool, error) {
 	var err error
-	statements := getMergedStatements(pv.Policies)
-	if err = pv.validateStatements(statements); err != nil {
+
+	if err = pv.checkValidStatements(statements); err != nil {
 		return DENIED, err
 	}
 	statements = pv.filterWithResourceAndAction(statements, pv.resource)
@@ -212,9 +216,9 @@ func (pv *policyValidator) IsAccessAllowed() (bool, error) {
 	return ALLOWED, nil
 }
 
-// validateStatements function checks if the effect of each statement is valid.
+// checkValidStatements function checks if the effect of each statement is valid.
 // If the effect is not 'Allow' or 'Deny', it returns an error.
-func (pv *policyValidator) validateStatements(statements []Statement) error {
+func (pv *policyValidator) checkValidStatements(statements []Statement) error {
 	for _, stmt := range statements {
 		if !isValidEffect(stmt.Effect) {
 			return fmt.Errorf("invalid effect: %s", stmt.Effect)
@@ -375,8 +379,8 @@ func (pv *policyValidator) getSecondArgumentForValidationFunc(prop Property, com
 // Helper functions
 // ----------------------------------------------
 
-// getMergedStatements will merge all statements from all policies to a single slice.
-func getMergedStatements(policies []Policy) []Statement {
+// extractStatements will merge all statements from all policies to a single slice.
+func extractStatements(policies []Policy) []Statement {
 	statements := make([]Statement, 0)
 	for _, policy := range policies {
 		statements = append(statements, policy.Statements...)
