@@ -62,9 +62,26 @@ type Comparator struct {
 }
 
 type ValidationFunc struct {
-	Function string
-	PropArg  *string
-	UserArg  *string
+	Function  string
+	PropArg   *string
+	UserArg   *string
+	StringArg *string
+}
+
+func (v *ValidationFunc) IsValid() bool {
+	notNilCount := 0
+
+	if v.PropArg != nil {
+		notNilCount++
+	}
+	if v.UserArg != nil {
+		notNilCount++
+	}
+	if v.StringArg != nil {
+		notNilCount++
+	}
+
+	return notNilCount == 1
 }
 
 //type TimeRange struct {
@@ -337,8 +354,11 @@ func (pv *policyValidator) isMatchedComparator(comparator Comparator, prop Prope
 }
 
 func (pv *policyValidator) getSecondArgumentForValidationFunc(prop Property, comparator Comparator) (string, error) {
-	if comparator.ValidationFunc.PropArg != nil && comparator.ValidationFunc.UserArg != nil {
-		return "", errors.New("invalid second argument for validation function, must be either prop or user")
+	if !comparator.ValidationFunc.IsValid() {
+		return "", errors.New("invalid second argument for validation function, must not have exactly one argument")
+
+	} else if comparator.ValidationFunc.StringArg != nil {
+		return *comparator.ValidationFunc.StringArg, nil
 
 	} else if comparator.ValidationFunc.PropArg != nil {
 		return prop.String[*comparator.ValidationFunc.PropArg], nil
