@@ -578,7 +578,32 @@ func TestGetSecondArgumentForValidationFunc_UserArg(t *testing.T) {
 	}
 }
 
-func TestGetSecondArgumentForValidationFunc_ErrHave2Args(t *testing.T) {
+func TestGetSecondArgumentForValidationFunc_StringArg(t *testing.T) {
+	// Arrange
+	expected := "Expected Value"
+
+	pValidator := New()
+
+	prop := Property{}
+	comparator := Comparator{
+		ValidationFunc: &ValidationFunc{
+			StringArg: &expected,
+		},
+	}
+
+	// Act
+	got, err := pValidator.getSecondArgumentForValidationFunc(prop, comparator)
+
+	// Assert
+	if got != expected {
+		t.Errorf("got %v, but want %v", got, expected)
+	}
+	if err != nil {
+		t.Errorf("got %v, but want nil", err)
+	}
+}
+
+func TestGetSecondArgumentForValidationFunc_ErrHaveMoreThan1Args(t *testing.T) {
 	// Arrange
 	pValidator := New()
 
