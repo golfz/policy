@@ -28,6 +28,10 @@ type ValidationOverrider interface {
 	OverridePolicyValidation(policies []Policy, UserPropertyGetter UserPropertyGetter, res Resource) (bool, error)
 }
 
+type PostValidator interface {
+	Validate(statements []Statement, res Resource) (bool, error)
+}
+
 type Policy struct {
 	Version    int
 	PolicyID   string
@@ -97,6 +101,7 @@ type policyValidator struct {
 	UserPropertyGetter  UserPropertyGetter
 	ValidationOverrider ValidationOverrider
 	validationFunctions map[string]ValidationFunction
+	postValidators      []PostValidator
 	Err                 error
 }
 
@@ -119,7 +124,12 @@ func New() *policyValidator {
 			Properties: Property{},
 		},
 		validationFunctions: make(map[string]ValidationFunction),
+		postValidators:      make([]PostValidator, 0),
 	}
+}
+
+func (pv *policyValidator) AddPostExecutor(pe PostValidator) {
+	pv.postValidators = append(pv.postValidators, pe)
 }
 
 func (pv *policyValidator) SetValidationFunction(funcName string, fn ValidationFunction) {
@@ -188,7 +198,19 @@ func (pv *policyValidator) IsAccessAllowed() (bool, error) {
 		return pv.ValidationOverrider.OverridePolicyValidation(pv.Policies, pv.UserPropertyGetter, pv.resource)
 	}
 
-	return pv.validateStatements(extractStatements(pv.Policies))
+	// Normal validation
+	if isAllow, err := pv.validateStatements(extractStatements(pv.Policies)); err != nil || !isAllow {
+		return DENIED, err
+	}
+
+	// Post validation, when normal validation is allowed
+	for _, postValidator := range pv.postValidators {
+		if result, err := postValidator.Validate(extractStatements(pv.Policies), pv.resource); err != nil || !result {
+			return DENIED, err
+		}
+	}
+
+	return ALLOWED, nil
 }
 
 func (pv *policyValidator) validateStatements(statements []Statement) (bool, error) {
