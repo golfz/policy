@@ -30,6 +30,21 @@ func (mock *MockValidationOverrider) OverridePolicyValidation(policies []Policy,
 	return mock.Result, mock.Error
 }
 
+type MockPostValidator struct {
+	WasCalled  bool
+	Statements []Statement
+	Resource   *Resource
+	Result     bool
+	Error      error
+}
+
+func (mock *MockPostValidator) Validate(statements []Statement, res Resource) (bool, error) {
+	mock.WasCalled = true
+	mock.Statements = statements
+	mock.Resource = &res
+	return mock.Result, mock.Error
+}
+
 func TestIsAccessAllowed(t *testing.T) {
 	t.Run("policyValidator with Error, expect error", func(t *testing.T) {
 		// Arrange
@@ -838,6 +853,161 @@ func TestIsAccessAllowed_FromParseJSON(t *testing.T) {
 			t.Errorf("got %v, but want %v", result, test.expected)
 		}
 	} // end for
+}
+
+func TestIsAccessAllowed_FromParseJSON_with_PostValidators(t *testing.T) {
+	// Arrange
+	tests := []struct {
+		name              string
+		file              string
+		resource          Resource
+		expectedAllowance bool
+		expectedError     bool
+		expectedWasCalled bool
+		expectedStatement bool
+		expectedResource  bool
+		mockPostValidator MockPostValidator
+	}{
+		// ALLOWED statement
+		{
+			name:              "ALLOWED statement, ALLOWED PostValidator, expect ALLOWED",
+			file:              "test_data/is_access_allowed/1policy_no_conditions.json",
+			expectedAllowance: ALLOWED,
+			expectedError:     false,
+			expectedWasCalled: true,
+			expectedStatement: true,
+			expectedResource:  true,
+			resource: Resource{
+				Resource: "res:::resource_1",
+				Action:   "act:::resource_1:action_1",
+			},
+			mockPostValidator: MockPostValidator{
+				Result: ALLOWED,
+				Error:  nil,
+			},
+		},
+		{
+			name:              "ALLOWED statement, DENIED PostValidator, expect DENIED",
+			file:              "test_data/is_access_allowed/1policy_no_conditions.json",
+			expectedAllowance: DENIED,
+			expectedError:     false,
+			expectedWasCalled: true,
+			expectedStatement: true,
+			expectedResource:  true,
+			resource: Resource{
+				Resource: "res:::resource_1",
+				Action:   "act:::resource_1:action_1",
+			},
+			mockPostValidator: MockPostValidator{
+				Result: DENIED,
+				Error:  nil,
+			},
+		},
+		{
+			name:              "ALLOWED statement, Error PostValidator, expect Error",
+			file:              "test_data/is_access_allowed/1policy_no_conditions.json",
+			expectedAllowance: DENIED,
+			expectedError:     true,
+			expectedWasCalled: true,
+			expectedStatement: true,
+			expectedResource:  true,
+			resource: Resource{
+				Resource: "res:::resource_1",
+				Action:   "act:::resource_1:action_1",
+			},
+			mockPostValidator: MockPostValidator{
+				Result: DENIED,
+				Error:  errors.New("error"),
+			},
+		},
+		// DENIED statement
+		{
+			name:              "DENIED statement, ALLOWED PostValidator, expect DENIED",
+			file:              "test_data/is_access_allowed/1policy_no_conditions.json",
+			expectedAllowance: DENIED,
+			expectedError:     false,
+			expectedWasCalled: false,
+			resource: Resource{
+				Resource: "res:::resource_2",
+				Action:   "act:::resource_2:action_1",
+			},
+			mockPostValidator: MockPostValidator{
+				Result: ALLOWED,
+				Error:  nil,
+			},
+		},
+		{
+			name:              "DENIED statement, DENIED PostValidator, expect DENIED",
+			file:              "test_data/is_access_allowed/1policy_no_conditions.json",
+			expectedAllowance: DENIED,
+			expectedError:     false,
+			expectedWasCalled: false,
+			resource: Resource{
+				Resource: "res:::resource_2",
+				Action:   "act:::resource_2:action_1",
+			},
+			mockPostValidator: MockPostValidator{
+				Result: ALLOWED,
+				Error:  nil,
+			},
+		},
+		{
+			name:              "DENIED statement, Error PostValidator, expect DENIED without error",
+			file:              "test_data/is_access_allowed/1policy_no_conditions.json",
+			expectedAllowance: DENIED,
+			expectedError:     false,
+			expectedWasCalled: false,
+			resource: Resource{
+				Resource: "res:::resource_2",
+				Action:   "act:::resource_2:action_1",
+			},
+			mockPostValidator: MockPostValidator{
+				Result: DENIED,
+				Error:  errors.New("error"),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Arrange
+			b, _ := os.ReadFile(tt.file)
+			p, _ := ParsePolicyArray(b)
+			ctrl := policyValidator{
+				Policies: p,
+			}
+			ctrl.SetResource(tt.resource.Resource)
+			ctrl.SetAction(tt.resource.Action)
+			ctrl.AddPostExecutor(&tt.mockPostValidator)
+
+			// Act
+			result, err := ctrl.IsAccessAllowed()
+
+			// Assert
+			if tt.expectedError == false && err != nil {
+				t.Errorf("got %v, but want nil", err)
+			}
+			if tt.expectedError == true && err == nil {
+				t.Error("want error, but got nil")
+			}
+			if result != tt.expectedAllowance {
+				t.Errorf("got %v, but want %v", result, tt.expectedAllowance)
+			}
+
+			if tt.expectedWasCalled != tt.mockPostValidator.WasCalled {
+				t.Errorf("expectedWasCalled: %v, but got %v", tt.expectedWasCalled, tt.mockPostValidator.WasCalled)
+			}
+
+			if tt.expectedWasCalled {
+				if tt.expectedStatement && len(tt.mockPostValidator.Statements) == 0 {
+					t.Errorf("want statement, but got empty")
+				}
+				if tt.expectedResource && tt.mockPostValidator.Resource == nil {
+					t.Error("want resource, but got nil")
+				}
+			}
+		})
+	}
 }
 
 func TestIsAccessAllowed_NoSetupValidationController(t *testing.T) {
